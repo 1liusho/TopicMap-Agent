@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-lineage-core"
+version = "0.1.0"
+description = "Shared models for Research Lineage Agent"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.8.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["research_lineage_core*"]
+

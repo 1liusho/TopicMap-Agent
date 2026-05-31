@@ -1,0 +1,90 @@
+{
+  "projectId": "proj-45a3c346",
+  "summary": "已基于 5 篇论文生成 mock 研究报告。 当前更适合验证页面和数据流，后续替换为真实抽取与证据校验。",
+  "sections": [
+    {
+      "id": "overview",
+      "title": "检索概览",
+      "content": "本轮围绕“Fabry-Perot cavity antenna”整理了 5 篇保留论文，来源包括 openalex, semantic_scholar。重点关注 PRS 结构、超表面加载、带宽提升与波束控制。"
+    },
+    {
+      "id": "routes",
+      "title": "技术路线",
+      "content": "- Partially Reflective Surface：关联 3 篇论文。\n- Metasurface Superstrate：关联 1 篇论文。\n- Reconfigurable PRS：关联 1 篇论文。"
+    },
+    {
+      "id": "metrics",
+      "title": "指标与证据观察",
+      "content": "- High Directivity：在 4 条关系中被提及。\n- Low Profile：在 3 条关系中被提及。\n- Beam Control：在 4 条关系中被提及。"
+    },
+    {
+      "id": "gaps",
+      "title": "研究空白建议",
+      "content": "- 如何在高增益和宽带之间找到更稳定的折中，仍然是 Fabry-Perot 腔天线里的核心问题。\n- 可重构 PRS 的控制复杂度、偏置网络损耗与辐射性能之间还缺少系统比较。\n- 面向毫米波和实际封装场景的低剖面结构，仍需要更多可复现实验数据。"
+    }
+  ],
+  "researchGaps": [
+    "如何在高增益和宽带之间找到更稳定的折中，仍然是 Fabry-Perot 腔天线里的核心问题。",
+    "可重构 PRS 的控制复杂度、偏置网络损耗与辐射性能之间还缺少系统比较。",
+    "面向毫米波和实际封装场景的低剖面结构，仍需要更多可复现实验数据。"
+  ],
+  "citations": [
+    {
+      "paperId": "proj-45a3c346-paper-01",
+      "title": "High-Gain Fabry-Perot Cavity Antenna Using a Partially Reflective Surface",
+      "authors": [
+        "J. Huang",
+        "M. Li"
+      ],
+      "year": 2021,
+      "venue": "IEEE Transactions on Antennas and Propagation",
+      "doi": "10.1109/TAP.2021.000001"
+    },
+    {
+      "paperId": "proj-45a3c346-paper-02",
+      "title": "Wideband Resonant Cavity Antenna with Metasurface Superstrate",
+      "authors": [
+        "Y. Chen",
+        "K. Zhang"
+      ],
+      "year": 2023,
+      "venue": "IEEE Access",
+      "doi": "10.1109/ACCESS.2023.000002"
+    },
+    {
+      "paperId": "proj-45a3c346-paper-03",
+      "title": "Low-Profile Fabry-Perot Antenna for Millimeter-Wave Applications",
+      "authors": [
+        "S. Kumar",
+        "R. Gupta"
+      ],
+      "year": 2020,
+      "venue": "IET Microwaves, Antennas & Propagation",
+      "doi": "10.1049/iet-map.2020.000003"
+    },
+    {
+      "paperId": "proj-45a3c346-paper-04",
+      "title": "Reconfigurable Partially Reflective Surface Antenna Based on PIN Diodes",
+      "authors": [
+        "L. Wang",
+        "P. Xu"
+      ],
+      "year": 2022,
+      "venue": "Progress In Electromagnetics Research",
+      "doi": "10.2528/PIER2200004"
+    },
+    {
+      "paperId": "proj-45a3c346-paper-05",
+      "title": "Review of Fabry-Perot Cavity Antennas: Structures, Bandwidth Enhancement, and Beam Control",
+      "authors": [
+        "A. Desai",
+        "H. Zhao"
+      ],
+      "year": 2024,
+      "venue": "International Journal of RF and Microwave Computer-Aided Engineering",
+      "doi": "10.1002/mmce.000005"
+    }
+  ],
+  "markdown": "# Fabry-Perot cavity antenna 研究报告\n\n> 已基于 5 篇论文生成 mock 研究报告。 当前更适合验证页面和数据流，后续替换为真实抽取与证据校验。\n\n## 检索概览\n\n本轮围绕“Fabry-Perot cavity antenna”整理了 5 篇保留论文，来源包括 openalex, semantic_scholar。重点关注 PRS 结构、超表面加载、带宽提升与波束控制。\n\n## 技术路线\n\n- Partially Reflective Surface：关联 3 篇论文。\n- Metasurface Superstrate：关联 1 篇论文。\n- Reconfigurable PRS：关联 1 篇论文。\n\n## 指标与证据观察\n\n- High Directivity：在 4 条关系中被提及。\n- Low Profile：在 3 条关系中被提及。\n- Beam Control：在 4 条关系中被提及。\n\n## 研究空白建议\n\n- 如何在高增益和宽带之间找到更稳定的折中，仍然是 Fabry-Perot 腔天线里的核心问题。\n- 可重构 PRS 的控制复杂度、偏置网络损耗与辐射性能之间还缺少系统比较。\n- 面向毫米波和实际封装场景的低剖面结构，仍需要更多可复现实验数据。\n\n## 引用列表\n\n- J. Huang, M. Li (2021). High-Gain Fabry-Perot Cavity Antenna Using a Partially Reflective Surface. IEEE Transactions on Antennas and Propagation, DOI: 10.1109/TAP.2021.000001\n- Y. Chen, K. Zhang (2023). Wideband Resonant Cavity Antenna with Metasurface Superstrate. IEEE Access, DOI: 10.1109/ACCESS.2023.000002\n- S. Kumar, R. Gupta (2020). Low-Profile Fabry-Perot Antenna for Millimeter-Wave Applications. IET Microwaves, Antennas & Propagation, DOI: 10.1049/iet-map.2020.000003\n- L. Wang, P. Xu (2022). Reconfigurable Partially Reflective Surface Antenna Based on PIN Diodes. Progress In Electromagnetics Research, DOI: 10.2528/PIER2200004\n- A. Desai, H. Zhao (2024). Review of Fabry-Perot Cavity Antennas: Structures, Bandwidth Enhancement, and Beam Control. International Journal of RF and Microwave Computer-Aided Engineering, DOI: 10.1002/mmce.000005",
+  "generatedAt": "2026-05-31T02:49:53+00:00"
+}

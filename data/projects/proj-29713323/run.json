@@ -1,0 +1,15 @@
+{
+  "id": "run-bf82b127",
+  "projectId": "proj-29713323",
+  "stage": "completed",
+  "status": "completed",
+  "startedAt": "2026-05-31T06:13:20+00:00",
+  "finishedAt": "2026-05-31T06:13:28+00:00",
+  "errorMessage": null,
+  "stats": {
+    "queryCount": 2,
+    "retrievedCount": 24,
+    "dedupedCount": 16,
+    "paperCount": 5
+  }
+}

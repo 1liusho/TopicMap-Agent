@@ -1,0 +1,15 @@
+{
+  "id": "proj-1779a4cc",
+  "topic": "Medical Image Registration",
+  "goal": "梳理关键技术路线、指标和研究空白",
+  "domain": "深度学习，计算机图像处理",
+  "yearStart": 2019,
+  "yearEnd": 2026,
+  "sources": [
+    "openalex",
+    "semantic_scholar"
+  ],
+  "status": "planned",
+  "createdAt": "2026-05-31T06:02:07+00:00",
+  "updatedAt": "2026-05-31T06:02:07+00:00"
+}
