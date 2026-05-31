@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研脉 - 研究脉络搜索</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f8fb;
+            --surface: #ffffff;
+            --surface2: #f0f1f6;
+            --border: #e4e6ed;
+            --border2: #eef0f4;
+            --text: #1a1d2e;
+            --text2: #6b708a;
+            --text3: #9ca0b4;
+            --purple: #6c5ce7;
+            --purple-light: #8b7cf7;
+            --purple-dark: #5a4bd1;
+            --purple-bg: rgba(108,92,231,0.06);
+            --teal: #10b981;
+            --amber: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ======== 背景装饰 ======== */
+        .bg-decor {
+            position: fixed; border-radius: 50%;
+            filter: blur(140px); opacity: 0.35;
+            pointer-events: none; z-index: 0;
+        }
+        .bg-decor.d1 { width: 500px; height: 500px; background: #e8e4ff; top: -180px; left: -120px; }
+        .bg-decor.d2 { width: 400px; height: 400px; background: #dcfce7; bottom: -150px; right: -80px; }
+
+        /* ======== 导航 ======== */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 60px; padding: 0 40px;
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6c5ce7, #8b7cf7);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 800; font-size: 18px;
+            box-shadow: 0 4px 16px rgba(108,92,231,0.25);
+        }
+        .nav-title {
+            font-size: 19px; font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text);
+        }
+        .nav-links { display: flex; gap: 4px; margin-left: 36px; }
+        .nav-link {
+            padding: 8px 18px; border-radius: 10px;
+            font-size: 13px; font-weight: 500;
+            color: var(--text2); text-decoration: none;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { color: var(--text); background: var(--surface2); }
+        .nav-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+        .btn-ghost {
+            padding: 7px 18px; border-radius: 10px;
+            font-size: 13px; font-weight: 500;
+            color: var(--text2); background: none; border: none;
+            cursor: pointer; transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-ghost:hover { color: var(--purple); background: var(--purple-bg); }
+        .btn-primary {
+            padding: 7px 20px; border-radius: 10px;
+            font-size: 13px; font-weight: 600;
+            color: #fff; background: var(--purple);
+            border: none; cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(108,92,231,0.2);
+        }
+        .btn-primary:hover { background: var(--purple-dark); box-shadow: 0 4px 16px rgba(108,92,231,0.3); transform: translateY(-1px); }
+
+        /* ======== 主区域 ======== */
+        .main-container {
+            position: relative; z-index: 1;
+            max-width: 680px; margin: 0 auto;
+            padding: 80px 24px 60px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* ======== Hero ======== */
+        .hero { text-align: center; margin-bottom: 56px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px; font-weight: 500;
+            color: var(--purple);
+            background: var(--purple-bg);
+            border: 1px solid rgba(108,92,231,0.15);
+            margin-bottom: 24px;
+        }
+        .hero-badge .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--teal);
+            animation: dot-pulse 2s ease-in-out infinite;
+        }
+        @keyframes dot-pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .hero h1 {
+            font-size: 48px; font-weight: 800;
+            letter-spacing: 4px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #1a1d2e, #6c5ce7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        .hero .subtitle {
+            font-size: 15px; color: var(--text2);
+            letter-spacing: 2px; font-weight: 400;
+        }
+
+        /* ======== 搜索栏 ======== */
+        .search-wrapper { width: 100%; position: relative; }
+        .search-box {
+            width: 100%;
+            display: flex; align-items: center;
+            background: var(--surface);
+            border: 2px solid var(--border2);
+            border-radius: 18px;
+            padding: 6px 6px 6px 20px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+        .search-box:focus-within {
+            border-color: var(--purple);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 0 0 5px var(--purple-bg);
+        }
+        .search-icon { color: var(--text3); flex-shrink: 0; margin-right: 10px; }
+        .search-input {
+            flex: 1; border: none; outline: none;
+            font-size: 15px; color: var(--text);
+            background: transparent; padding: 12px 0;
+            font-family: inherit;
+        }
+        .search-input::placeholder { color: var(--text3); }
+        .search-clear {
+            background: none; border: none; color: var(--text3);
+            cursor: pointer; padding: 8px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .search-clear:hover { color: var(--text2); background: var(--bg); }
+        .search-clear.visible { display: flex; }
+        .search-divider { width: 1px; height: 24px; background: var(--border); margin: 0 8px; }
+        .search-submit {
+            display: flex; align-items: center; gap: 6px;
+            padding: 11px 22px;
+            background: var(--purple);
+            color: #fff; border: none;
+            border-radius: 14px;
+            font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s;
+            font-family: inherit;
+        }
+        .search-submit:hover {
+            background: var(--purple-dark);
+            box-shadow: 0 4px 18px rgba(108,92,231,0.3);
+            transform: translateY(-1px);
+        }
+        .search-hint { margin-top: 12px; padding-left: 18px; font-size: 12px; color: var(--text3); }
+
+        /* ======== 热门搜索 ======== */
+        .trending { margin-top: 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .trending-label { font-size: 12px; color: var(--text3); flex-shrink: 0; }
+        .trending-tag {
+            padding: 5px 14px; border-radius: 16px;
+            font-size: 12px; color: var(--text2);
+            background: var(--surface); border: 1px solid var(--border2);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .trending-tag:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-bg); }
+
+        /* ======== 历史搜索 ======== */
+        .history-section { width: 100%; margin-top: 56px; }
+        .history-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .history-header h3 {
+            font-size: 14px; font-weight: 600;
+            color: var(--text2);
+            display: flex; align-items: center; gap: 8px;
+            letter-spacing: 0.5px;
+        }
+        .history-header h3 svg { color: var(--text3); }
+        .clear-history {
+            background: none; border: none;
+            color: var(--text3); font-size: 12px;
+            cursor: pointer; padding: 4px 10px; border-radius: 6px;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .clear-history:hover { color: #ef4444; background: #fef2f2; }
+
+        .history-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+        .history-tag {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 10px 18px;
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            font-size: 13px; color: var(--text2);
+            cursor: pointer; transition: all 0.25s;
+        }
+        .history-tag:hover {
+            border-color: var(--purple-light);
+            color: var(--purple);
+            background: var(--purple-bg);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(108,92,231,0.08);
+        }
+        .history-tag .tag-clock { color: var(--text3); flex-shrink: 0; }
+        .history-tag .tag-remove {
+            color: var(--text3); font-size: 17px; line-height: 1;
+            cursor: pointer; padding: 2px 4px; border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .history-tag .tag-remove:hover { color: #ef4444; background: #fef2f2; }
+        .history-empty { text-align: center; color: var(--text3); padding: 40px 0; font-size: 13px; }
+
+        /* ======== Toast ======== */
+        .toast {
+            position: fixed; bottom: 40px; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text); color: #fff;
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 13px; font-weight: 500;
+            opacity: 0; transition: all 0.3s;
+            pointer-events: none; z-index: 999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .footer { position: relative; z-index: 1; text-align: center; padding: 32px; font-size: 12px; color: var(--text3); }
+
+        @media (max-width: 640px) {
+            .navbar { padding: 0 16px; }
+            .nav-links { display: none; }
+            .hero h1 { font-size: 32px; letter-spacing: 3px; }
+            .main-container { padding: 48px 16px 40px; }
+            .search-box { padding: 4px 4px 4px 14px; border-radius: 14px; }
+            .search-submit { padding: 10px 16px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-decor d1"></div>
+    <div class="bg-decor d2"></div>
+
+    <nav class="navbar">
+        <a class="nav-brand" href="index.html">
+            <div class="logo-icon">研</div>
+            <span class="nav-title">研脉</span>
+        </a>
+        <div class="nav-links">
+            <a class="nav-link" href="papers.html">文献目录</a>
+            <a class="nav-link" href="knowledge-graph.html">知识图谱</a>
+        </div>
+        <div class="nav-actions">
+            <button class="btn-ghost">登 录</button>
+            <button class="btn-primary">注 册</button>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <div class="hero">
+            <div class="hero-badge"><span class="dot"></span> AI · 研究脉络平台</div>
+            <h1>研 脉</h1>
+            <p class="subtitle">研究脉络 · 知识图谱 · 文献搜索</p>
+        </div>
+
+        <div class="search-wrapper">
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input class="search-input" type="text" id="searchInput" placeholder="搜索研究主题、论文、学者..." autocomplete="off">
+                <button class="search-clear" id="searchClear">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <span class="search-divider"></span>
+                <button class="search-submit" id="searchBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    搜索
+                </button>
+            </div>
+            <p class="search-hint">支持中英文、关键词、作者名、DOI 检索</p>
+            <div class="trending">
+                <span class="trending-label">🔥 热门</span>
+                <span class="trending-tag">大语言模型</span>
+                <span class="trending-tag">图神经网络</span>
+                <span class="trending-tag">Transformer</span>
+                <span class="trending-tag">知识图谱</span>
+                <span class="trending-tag">多模态学习</span>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    历史搜索
+                </h3>
+                <button class="clear-history" id="clearHistory">清空记录</button>
+            </div>
+            <div class="history-tags" id="historyTags">
+                <div class="history-empty">暂无搜索记录</div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">&copy; 2025 研脉 YanMai · 研究脉络平台</footer>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const STORAGE_KEY = 'yanmai_search_history';
+        const MAX_HISTORY = 10;
+
+        function getHistory() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } }
+        function saveHistory(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+        function addHistory(query) {
+            if (!query.trim()) return;
+            let list = getHistory().filter(item => item !== query);
+            list.unshift(query);
+            if (list.length > MAX_HISTORY) list = list.slice(0, MAX_HISTORY);
+            saveHistory(list); renderHistory();
+        }
+        function removeHistory(query) {
+            saveHistory(getHistory().filter(item => item !== query));
+            renderHistory(); showToast('已删除');
+        }
+        function clearAllHistory() {
+            if (getHistory().length === 0) return;
+            if (confirm('确定清空所有搜索记录？')) { saveHistory([]); renderHistory(); showToast('已清空'); }
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyTags');
+            const list = getHistory();
+            if (list.length === 0) { container.innerHTML = '<div class="history-empty">暂无搜索记录</div>'; return; }
+            container.innerHTML = list.map(item => `
+                <div class="history-tag" data-query="${escapeHtml(item)}">
+                    <svg class="tag-clock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>${escapeHtml(item)}</span>
+                    <span class="tag-remove" data-action="remove" data-query="${escapeHtml(item)}">&times;</span>
+                </div>`).join('');
+            container.querySelectorAll('.history-tag').forEach(tag => {
+                tag.addEventListener('click', function(e) { if (e.target.dataset.action === 'remove') return; doSearch(this.dataset.query); });
+            });
+            container.querySelectorAll('.tag-remove').forEach(btn => {
+                btn.addEventListener('click', function(e) { e.stopPropagation(); removeHistory(this.dataset.query); });
+            });
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]);
+        }
+
+        function doSearch(query) {
+            if (!query.trim()) return;
+            addHistory(query);
+            window.location.href = 'search-loading.html?q=' + encodeURIComponent(query.trim());
+        }
+
+        let toastTimer;
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg; el.classList.add('show');
+            clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        document.getElementById('searchBtn').addEventListener('click', () => doSearch(document.getElementById('searchInput').value));
+        const si = document.getElementById('searchInput');
+        si.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(si.value); });
+        const sc = document.getElementById('searchClear');
+        si.addEventListener('input', () => sc.classList.toggle('visible', si.value.length > 0));
+        sc.addEventListener('click', () => { si.value = ''; sc.classList.remove('visible'); si.focus(); });
+        document.getElementById('clearHistory').addEventListener('click', clearAllHistory);
+        document.querySelectorAll('.trending-tag').forEach(tag => { tag.addEventListener('click', () => doSearch(tag.textContent)); });
+
+        renderHistory();
+    </script>
+</body>
+</html>
