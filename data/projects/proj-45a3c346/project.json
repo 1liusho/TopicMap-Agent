@@ -1,0 +1,15 @@
+{
+  "id": "proj-45a3c346",
+  "topic": "Fabry-Perot cavity antenna",
+  "goal": "梳理关键技术路线、指标和研究空白",
+  "domain": "天线与电磁",
+  "yearStart": 2019,
+  "yearEnd": 2026,
+  "sources": [
+    "openalex",
+    "semantic_scholar"
+  ],
+  "status": "completed",
+  "createdAt": "2026-05-31T02:49:37+00:00",
+  "updatedAt": "2026-05-31T02:49:53+00:00"
+}

@@ -1,0 +1,564 @@
+{
+  "projectId": "proj-29713323",
+  "nodes": [
+    {
+      "id": "proj-29713323-paper-01",
+      "projectId": "proj-29713323",
+      "type": "Paper",
+      "label": "High-Gain Fabry-Perot Cavity Antenna Using a Partially Reflective Surface",
+      "properties": {
+        "year": 2021,
+        "venue": "IEEE Transactions on Antennas and Propagation",
+        "doi": "10.1109/TAP.2021.000001",
+        "authors": [
+          "J. Huang",
+          "M. Li"
+        ],
+        "relevanceScore": 0.95,
+        "qualityScore": 0.89
+      }
+    },
+    {
+      "id": "proj-29713323-paper-02",
+      "projectId": "proj-29713323",
+      "type": "Paper",
+      "label": "Wideband Resonant Cavity Antenna with Metasurface Superstrate",
+      "properties": {
+        "year": 2023,
+        "venue": "IEEE Access",
+        "doi": "10.1109/ACCESS.2023.000002",
+        "authors": [
+          "Y. Chen",
+          "K. Zhang"
+        ],
+        "relevanceScore": 0.91,
+        "qualityScore": 0.78
+      }
+    },
+    {
+      "id": "proj-29713323-paper-03",
+      "projectId": "proj-29713323",
+      "type": "Paper",
+      "label": "Low-Profile Fabry-Perot Antenna for Millimeter-Wave Applications",
+      "properties": {
+        "year": 2020,
+        "venue": "IET Microwaves, Antennas & Propagation",
+        "doi": "10.1049/iet-map.2020.000003",
+        "authors": [
+          "S. Kumar",
+          "R. Gupta"
+        ],
+        "relevanceScore": 0.88,
+        "qualityScore": 0.81
+      }
+    },
+    {
+      "id": "proj-29713323-paper-04",
+      "projectId": "proj-29713323",
+      "type": "Paper",
+      "label": "Reconfigurable Partially Reflective Surface Antenna Based on PIN Diodes",
+      "properties": {
+        "year": 2022,
+        "venue": "Progress In Electromagnetics Research",
+        "doi": "10.2528/PIER2200004",
+        "authors": [
+          "L. Wang",
+          "P. Xu"
+        ],
+        "relevanceScore": 0.84,
+        "qualityScore": 0.77
+      }
+    },
+    {
+      "id": "proj-29713323-paper-05",
+      "projectId": "proj-29713323",
+      "type": "Paper",
+      "label": "Review of Fabry-Perot Cavity Antennas: Structures, Bandwidth Enhancement, and Beam Control",
+      "properties": {
+        "year": 2024,
+        "venue": "International Journal of RF and Microwave Computer-Aided Engineering",
+        "doi": "10.1002/mmce.000005",
+        "authors": [
+          "A. Desai",
+          "H. Zhao"
+        ],
+        "relevanceScore": 0.97,
+        "qualityScore": 0.83
+      }
+    },
+    {
+      "id": "method-prs",
+      "projectId": "proj-29713323",
+      "type": "Method",
+      "label": "Partially Reflective Surface",
+      "properties": {
+        "keywords": [
+          "partially reflective surface",
+          "prs"
+        ]
+      }
+    },
+    {
+      "id": "problem-bandwidth",
+      "projectId": "proj-29713323",
+      "type": "Problem",
+      "label": "Bandwidth Enhancement",
+      "properties": {
+        "keywords": [
+          "bandwidth",
+          "wideband"
+        ]
+      }
+    },
+    {
+      "id": "metric-directivity",
+      "projectId": "proj-29713323",
+      "type": "Metric",
+      "label": "High Directivity",
+      "properties": {
+        "keywords": [
+          "directivity",
+          "gain"
+        ]
+      }
+    },
+    {
+      "id": "metric-low-profile",
+      "projectId": "proj-29713323",
+      "type": "Metric",
+      "label": "Low Profile",
+      "properties": {
+        "keywords": [
+          "low-profile",
+          "compact"
+        ]
+      }
+    },
+    {
+      "id": "method-metasurface",
+      "projectId": "proj-29713323",
+      "type": "Method",
+      "label": "Metasurface Superstrate",
+      "properties": {
+        "keywords": [
+          "metasurface",
+          "superstrate"
+        ]
+      }
+    },
+    {
+      "id": "app-mmwave",
+      "projectId": "proj-29713323",
+      "type": "Application",
+      "label": "Millimeter-wave / 5G",
+      "properties": {
+        "keywords": [
+          "millimeter-wave",
+          "5g",
+          "base-station"
+        ]
+      }
+    },
+    {
+      "id": "method-reconfigurable",
+      "projectId": "proj-29713323",
+      "type": "Method",
+      "label": "Reconfigurable PRS",
+      "properties": {
+        "keywords": [
+          "reconfigurable",
+          "pin diode",
+          "tuning"
+        ]
+      }
+    },
+    {
+      "id": "metric-beam-control",
+      "projectId": "proj-29713323",
+      "type": "Metric",
+      "label": "Beam Control",
+      "properties": {
+        "keywords": [
+          "beam",
+          "steering",
+          "tuning"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-proj-29713323-paper-01-method-prs",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-01",
+      "targetNodeId": "method-prs",
+      "type": "uses",
+      "confidence": 0.76,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-01-method-prs"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-01-problem-bandwidth",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-01",
+      "targetNodeId": "problem-bandwidth",
+      "type": "targets",
+      "confidence": 0.71,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-01-problem-bandwidth"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-01-metric-directivity",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-01",
+      "targetNodeId": "metric-directivity",
+      "type": "achieves",
+      "confidence": 0.79,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-01-metric-directivity"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-01-metric-low-profile",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-01",
+      "targetNodeId": "metric-low-profile",
+      "type": "achieves",
+      "confidence": 0.79,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-01-metric-low-profile"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-02-method-metasurface",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-02",
+      "targetNodeId": "method-metasurface",
+      "type": "uses",
+      "confidence": 0.76,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-02-method-metasurface"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-02-problem-bandwidth",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-02",
+      "targetNodeId": "problem-bandwidth",
+      "type": "targets",
+      "confidence": 0.71,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-02-problem-bandwidth"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-02-metric-directivity",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-02",
+      "targetNodeId": "metric-directivity",
+      "type": "achieves",
+      "confidence": 0.79,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-02-metric-directivity"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-03-metric-low-profile",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-03",
+      "targetNodeId": "metric-low-profile",
+      "type": "achieves",
+      "confidence": 0.79,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-03-metric-low-profile"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-03-app-mmwave",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-03",
+      "targetNodeId": "app-mmwave",
+      "type": "applies_to",
+      "confidence": 0.73,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-03-app-mmwave"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-04-method-prs",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-04",
+      "targetNodeId": "method-prs",
+      "type": "uses",
+      "confidence": 0.76,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-04-method-prs"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-04-method-reconfigurable",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-04",
+      "targetNodeId": "method-reconfigurable",
+      "type": "uses",
+      "confidence": 0.76,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-04-method-reconfigurable"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-04-metric-beam-control",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-04",
+      "targetNodeId": "metric-beam-control",
+      "type": "achieves",
+      "confidence": 0.79,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-04-metric-beam-control"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-05-method-prs",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-05",
+      "targetNodeId": "method-prs",
+      "type": "uses",
+      "confidence": 0.76,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-05-method-prs"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-05-problem-bandwidth",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-05",
+      "targetNodeId": "problem-bandwidth",
+      "type": "targets",
+      "confidence": 0.71,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-05-problem-bandwidth"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-proj-29713323-paper-05-metric-beam-control",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "proj-29713323-paper-05",
+      "targetNodeId": "metric-beam-control",
+      "type": "achieves",
+      "confidence": 0.79,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-05-metric-beam-control"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-method-metric-01",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "method-metasurface",
+      "targetNodeId": "metric-directivity",
+      "type": "targets",
+      "confidence": 0.68,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-02-method-metasurface"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-method-metric-02",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "method-prs",
+      "targetNodeId": "metric-beam-control",
+      "type": "targets",
+      "confidence": 0.68,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-04-method-prs",
+        "ev-proj-29713323-paper-05-method-prs"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-method-metric-03",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "method-prs",
+      "targetNodeId": "metric-directivity",
+      "type": "targets",
+      "confidence": 0.68,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-01-method-prs"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-method-metric-04",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "method-prs",
+      "targetNodeId": "metric-low-profile",
+      "type": "targets",
+      "confidence": 0.68,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-01-method-prs"
+      ],
+      "extractionMethod": "rule"
+    },
+    {
+      "id": "edge-method-metric-05",
+      "projectId": "proj-29713323",
+      "sourceNodeId": "method-reconfigurable",
+      "targetNodeId": "metric-beam-control",
+      "type": "targets",
+      "confidence": 0.68,
+      "evidenceSpanIds": [
+        "ev-proj-29713323-paper-04-method-reconfigurable"
+      ],
+      "extractionMethod": "rule"
+    }
+  ],
+  "evidenceSpans": [
+    {
+      "id": "ev-proj-29713323-paper-01-method-prs",
+      "paperId": "proj-29713323-paper-01",
+      "text": "The paper studies partially reflective surface design for compact Fabry-Perot cavity antennas with improved gain-bandwidth trade-offs.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-01-problem-bandwidth",
+      "paperId": "proj-29713323-paper-01",
+      "text": "The paper studies partially reflective surface design for compact Fabry-Perot cavity antennas with improved gain-bandwidth trade-offs.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-01-metric-directivity",
+      "paperId": "proj-29713323-paper-01",
+      "text": "The paper studies partially reflective surface design for compact Fabry-Perot cavity antennas with improved gain-bandwidth trade-offs.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-01-metric-low-profile",
+      "paperId": "proj-29713323-paper-01",
+      "text": "The paper studies partially reflective surface design for compact Fabry-Perot cavity antennas with improved gain-bandwidth trade-offs.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-02-method-metasurface",
+      "paperId": "proj-29713323-paper-02",
+      "text": "A metasurface superstrate is used to widen the impedance bandwidth of a resonant cavity antenna while preserving high directivity.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-02-problem-bandwidth",
+      "paperId": "proj-29713323-paper-02",
+      "text": "A metasurface superstrate is used to widen the impedance bandwidth of a resonant cavity antenna while preserving high directivity.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-02-metric-directivity",
+      "paperId": "proj-29713323-paper-02",
+      "text": "A metasurface superstrate is used to widen the impedance bandwidth of a resonant cavity antenna while preserving high directivity.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-03-metric-low-profile",
+      "paperId": "proj-29713323-paper-03",
+      "text": "This work proposes a low-profile cavity geometry for millimeter-wave Fabry-Perot antennas targeting 5G base-station scenarios.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-03-app-mmwave",
+      "paperId": "proj-29713323-paper-03",
+      "text": "This work proposes a low-profile cavity geometry for millimeter-wave Fabry-Perot antennas targeting 5G base-station scenarios.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-04-method-prs",
+      "paperId": "proj-29713323-paper-04",
+      "text": "PIN-diode controlled partially reflective surfaces enable beam and frequency tuning in Fabry-Perot style antennas.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-04-method-reconfigurable",
+      "paperId": "proj-29713323-paper-04",
+      "text": "PIN-diode controlled partially reflective surfaces enable beam and frequency tuning in Fabry-Perot style antennas.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-04-metric-beam-control",
+      "paperId": "proj-29713323-paper-04",
+      "text": "PIN-diode controlled partially reflective surfaces enable beam and frequency tuning in Fabry-Perot style antennas.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-05-method-prs",
+      "paperId": "proj-29713323-paper-05",
+      "text": "A review summarizing cavity geometry, PRS design, bandwidth enhancement techniques, and beam-steering methods for Fabry-Perot antennas.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-05-problem-bandwidth",
+      "paperId": "proj-29713323-paper-05",
+      "text": "A review summarizing cavity geometry, PRS design, bandwidth enhancement techniques, and beam-steering methods for Fabry-Perot antennas.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    },
+    {
+      "id": "ev-proj-29713323-paper-05-metric-beam-control",
+      "paperId": "proj-29713323-paper-05",
+      "text": "A review summarizing cavity geometry, PRS design, bandwidth enhancement techniques, and beam-steering methods for Fabry-Perot antennas.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    }
+  ],
+  "stats": {
+    "paperCount": 5,
+    "edgeCount": 20,
+    "evidenceCount": 15,
+    "methodCount": 3,
+    "problemCount": 1,
+    "metricCount": 3,
+    "applicationCount": 1
+  },
+  "generatedAt": "2026-05-31T06:13:28+00:00"
+}

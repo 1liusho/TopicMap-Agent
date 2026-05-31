@@ -1,0 +1,15 @@
+{
+  "id": "proj-0b617c68",
+  "topic": "Fabry-Perot cavity antenna",
+  "goal": "?????????????",
+  "domain": "?????",
+  "yearStart": 2019,
+  "yearEnd": 2026,
+  "sources": [
+    "openalex",
+    "semantic_scholar"
+  ],
+  "status": "completed",
+  "createdAt": "2026-05-30T14:54:24+00:00",
+  "updatedAt": "2026-05-30T14:54:34+00:00"
+}
