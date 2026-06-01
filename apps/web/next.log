@@ -1,0 +1,82 @@
+
+> research-lineage-web@0.1.0 dev
+> next dev --port 3000
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3000
+   - Network:      http://198.18.0.1:3000
+
+ ✓ Starting...
+ ✓ Ready in 4.9s
+ ○ Compiling /projects/[id]/report ...
+ ✓ Compiled /projects/[id]/papers in 6.3s (628 modules)
+ GET /projects/proj-3abe8a69/report 200 in 8212ms
+ GET /projects/proj-3abe8a69/graph 200 in 7079ms
+ GET /projects/proj-3abe8a69/papers 200 in 3979ms
+ ✓ Compiled / in 381ms (622 modules)
+ GET / 200 in 713ms
+ ✓ Compiled /projects/[id]/run in 354ms (630 modules)
+ GET /projects/proj-3abe8a69/run 200 in 1334ms
+ ○ Compiling /api/assistant/message ...
+ ✓ Compiled /api/assistant/message in 834ms (653 modules)
+ POST /api/assistant/message 200 in 1074ms
+ ○ Compiling /projects/new ...
+ ✓ Compiled /projects/new in 739ms (606 modules)
+ GET /projects/new 200 in 1171ms
+   Reload env: .env.local
+ ✓ Compiled in 2.3s (252 modules)
+ ○ Compiling /api/assistant/message ...
+ ✓ Compiled /api/assistant/message in 544ms (105 modules)
+ POST /api/assistant/message 502 in 680ms
+ POST /api/assistant/message 502 in 61ms
+ POST /api/assistant/message 200 in 22329ms
+ GET /api/assistant/message 405 in 64ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1832ms (389 modules)
+ GET / 200 in 92ms
+ GET /api/assistant/message 405 in 49ms
+ ✓ Compiled /projects/[id]/graph in 300ms (396 modules)
+ GET /projects/proj-3abe8a69/graph 200 in 758ms
+ GET / 200 in 169ms
+ GET /api/assistant/message 405 in 51ms
+ GET /projects/proj-3abe8a69/graph 200 in 184ms
+ GET / 200 in 126ms
+ GET / 200 in 91ms
+ GET /api/assistant/message 405 in 16ms
+ GET /projects/proj-3abe8a69/graph 200 in 152ms
+ ✓ Compiled /projects/[id]/run in 398ms (402 modules)
+ GET /projects/proj-6bb098bb/run 200 in 645ms
+ GET /projects/proj-6bb098bb/run 200 in 97ms
+ GET /projects/proj-6bb098bb/graph 200 in 87ms
+ ✓ Compiled /projects/[id]/report in 439ms (411 modules)
+ GET /projects/proj-6bb098bb/report 200 in 786ms
+ GET /projects/proj-6bb098bb/report 200 in 64ms
+ GET /projects/proj-6bb098bb/report 200 in 95ms
+ GET / 200 in 413ms
+ GET /projects/proj-7cf326c0/run 200 in 120ms
+ ○ Compiling /projects/[id]/papers ...
+ ✓ Compiled /projects/[id]/papers in 602ms (395 modules)
+ GET /projects/proj-7cf326c0/papers 200 in 1022ms
+ GET /projects/proj-7cf326c0/papers 200 in 56ms
+ GET /projects/proj-7cf326c0/report 200 in 116ms
+ GET /projects/proj-7cf326c0/graph 200 in 99ms
+ GET /projects/proj-7cf326c0/report 200 in 107ms
+ GET /projects/proj-7cf326c0/graph 200 in 103ms
+ GET /projects/proj-7cf326c0/papers 200 in 107ms
+ GET /projects/proj-7cf326c0/graph 200 in 92ms
+ GET /projects/proj-7cf326c0/report 200 in 97ms
+ GET /projects/proj-7cf326c0/graph 200 in 87ms
+ GET /projects/proj-7cf326c0/papers 200 in 82ms
+ GET /projects/proj-7cf326c0/report 200 in 86ms
+ GET /projects/proj-7cf326c0/graph 200 in 95ms
+ GET /projects/proj-7cf326c0/report 200 in 97ms
+ GET /projects/proj-7cf326c0/papers 200 in 93ms
+ GET /projects/proj-7cf326c0/graph 200 in 93ms
+ GET /projects/proj-7cf326c0/report 200 in 104ms
+ GET /projects/proj-7cf326c0/papers 200 in 84ms
+ GET /projects/proj-7cf326c0/run 200 in 85ms
+ GET /projects/proj-7cf326c0/papers 200 in 95ms
+ GET /projects/proj-7cf326c0/graph 200 in 85ms
+ GET /projects/proj-7cf326c0/report 200 in 93ms
+ GET /projects/proj-7cf326c0/papers 200 in 90ms
+ GET /projects/proj-7cf326c0/graph 200 in 97ms

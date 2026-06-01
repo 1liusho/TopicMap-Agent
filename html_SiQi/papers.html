@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文献目录 - 研脉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f8fb; --surface: #ffffff; --surface2: #f0f1f6;
+            --border: #e4e6ed; --border2: #eef0f4;
+            --text: #1a1d2e; --text2: #6b708a; --text3: #9ca0b4;
+            --purple: #6c5ce7; --purple-light: #8b7cf7; --purple-bg: rgba(108,92,231,0.06);
+            --teal: #10b981; --amber: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; height: 60px; padding: 0 40px;
+            background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); gap: 16px;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6c5ce7, #8b7cf7); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 800; font-size: 18px;
+            box-shadow: 0 4px 16px rgba(108,92,231,0.25);
+        }
+        .nav-title { font-size: 19px; font-weight: 700; letter-spacing: 2px; }
+        .nav-search {
+            flex: 1; max-width: 360px; margin-left: 24px;
+            display: flex; align-items: center; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px;
+            transition: all 0.2s;
+        }
+        .nav-search:focus-within { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-bg); background: #fff; }
+        .nav-search input {
+            flex: 1; border: none; outline: none; font-size: 13px;
+            color: var(--text); background: transparent; font-family: inherit;
+        }
+        .nav-search input::placeholder { color: var(--text3); }
+        .nav-search button { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; }
+
+        .nav-tabs { display: flex; gap: 4px; margin-left: 24px; background: var(--surface2); border-radius: 10px; padding: 3px; }
+        .nav-tab {
+            padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+            color: var(--text2); text-decoration: none; transition: all 0.2s;
+        }
+        .nav-tab.active { background: #fff; color: var(--purple); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .nav-tab.graph-tab.active { color: var(--teal); }
+        .nav-tab:hover:not(.active) { color: var(--text); }
+        .nav-back {
+            background: none; border: none; color: var(--text2); cursor: pointer;
+            font-size: 13px; padding: 7px 14px; border-radius: 9px;
+            display: flex; align-items: center; gap: 4px; transition: all 0.2s;
+            margin-left: auto; text-decoration: none; font-family: inherit;
+        }
+        .nav-back:hover { color: var(--purple); background: var(--purple-bg); }
+
+        /* Layout */
+        .layout { display: flex; max-width: 1280px; margin: 0 auto; padding: 28px 28px 48px; gap: 28px; }
+
+        /* Sidebar */
+        .sidebar { width: 230px; flex-shrink: 0; position: sticky; top: 88px; align-self: flex-start; }
+        .filter-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; padding: 22px; }
+        .filter-box h3 { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .filter-group { margin-bottom: 18px; }
+        .filter-group:last-child { margin-bottom: 0; }
+        .filter-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .filter-option { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.15s; }
+        .filter-option:hover { background: var(--bg); }
+        .filter-option input[type="checkbox"] { accent-color: var(--purple); }
+        .filter-option .count { margin-left: auto; font-size: 11px; color: var(--text3); }
+        .year-slider { display: flex; align-items: center; gap: 8px; }
+        .year-slider input[type="range"] { flex: 1; accent-color: var(--purple); }
+        .year-slider span { font-size: 11px; color: var(--text3); min-width: 34px; text-align: center; }
+
+        /* Content */
+        .content { flex: 1; min-width: 0; }
+        .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .results-count { font-size: 14px; color: var(--text2); }
+        .results-count strong { color: var(--purple); font-weight: 700; }
+        .results-sort { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); }
+        .results-sort select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 12px; color: var(--text); background: var(--surface);
+            cursor: pointer; outline: none; font-family: inherit;
+        }
+        .results-sort select:focus { border-color: var(--purple); }
+
+        .paper-list { display: flex; flex-direction: column; gap: 10px; }
+        .paper-card {
+            background: var(--surface); border: 1px solid var(--border2); border-radius: 14px;
+            padding: 20px 24px; cursor: pointer; transition: all 0.25s;
+            display: flex; gap: 18px;
+        }
+        .paper-card:hover {
+            border-color: rgba(108,92,231,0.2);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            transform: translateY(-2px);
+        }
+        .paper-rank {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; color: var(--text3);
+            background: var(--bg); flex-shrink: 0;
+        }
+        .paper-card:nth-child(1) .paper-rank { background: #fef3c7; color: #d97706; }
+        .paper-card:nth-child(2) .paper-rank { background: var(--surface2); color: var(--text2); }
+        .paper-card:nth-child(3) .paper-rank { background: #fed7aa; color: #c2410c; }
+        .paper-body { flex: 1; min-width: 0; }
+        .paper-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; line-height: 1.45; }
+        .paper-authors { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+        .paper-venue { font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+        .paper-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .paper-tag { padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 500; }
+        .paper-tag.keyword { background: var(--purple-bg); color: var(--purple); }
+        .paper-tag.year { background: rgba(59,130,246,0.08); color: #3b82f6; }
+        .paper-tag.citation { background: rgba(16,185,129,0.08); color: var(--teal); }
+        .paper-action { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+        .paper-citations { text-align: center; }
+        .paper-citations strong { display: block; font-size: 20px; color: var(--purple); }
+        .paper-citations span { font-size: 11px; color: var(--text3); }
+        .btn-outline {
+            padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+            background: none; color: var(--text2); font-size: 11px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .btn-outline:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-bg); }
+
+        .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 32px; }
+        .page-btn {
+            width: 38px; height: 38px; border: 1px solid var(--border); border-radius: 10px;
+            background: var(--surface); font-size: 13px; color: var(--text2);
+            cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+            font-family: inherit;
+        }
+        .page-btn:hover { border-color: var(--purple); color: var(--purple); }
+        .page-btn.active { background: var(--purple); border-color: var(--purple); color: #fff; font-weight: 600; }
+
+        .toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: var(--text); color: #fff; padding: 12px 24px; border-radius: 12px;
+            font-size: 13px; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; padding: 16px; }
+            .sidebar { width: 100%; position: static; }
+            .navbar { padding: 0 16px; }
+            .nav-tabs { margin-left: 8px; }
+            .nav-search { margin-left: 8px; max-width: 160px; }
+            .paper-card { flex-wrap: wrap; }
+            .paper-action { flex-direction: row; width: 100%; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a class="nav-brand" href="index.html">
+            <div class="logo-icon">研</div>
+            <span class="nav-title">研脉</span>
+        </a>
+        <div class="nav-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca0b4" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="navSearchInput" placeholder="搜索论文、学者..." autocomplete="off">
+            <button id="navSearchClear" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="nav-tabs">
+            <a class="nav-tab active" href="papers.html">文献目录</a>
+            <a class="nav-tab graph-tab" href="knowledge-graph.html">知识图谱</a>
+        </div>
+        <a class="nav-back" href="index.html">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            返回首页
+        </a>
+    </nav>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="filter-box">
+                <h3>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    筛选条件
+                </h3>
+                <div class="filter-group">
+                    <div class="filter-label">文献类型</div>
+                    <label class="filter-option"><input type="checkbox" checked> 期刊论文 <span class="count">98</span></label>
+                    <label class="filter-option"><input type="checkbox" checked> 会议论文 <span class="count">42</span></label>
+                    <label class="filter-option"><input type="checkbox"> 综述文章 <span class="count">11</span></label>
+                    <label class="filter-option"><input type="checkbox"> 学位论文 <span class="count">5</span></label>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">发表年份</div>
+                    <div class="year-slider">
+                        <span>2018</span>
+                        <input type="range" min="2018" max="2025" value="2025" id="yearSlider">
+                        <span id="yearLabel">2025</span>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">语言</div>
+                    <label class="filter-option"><input type="checkbox" checked> 中文 <span class="count">72</span></label>
+                    <label class="filter-option"><input type="checkbox" checked> 英文 <span class="count">84</span></label>
+                </div>
+            </div>
+        </aside>
+
+        <section class="content">
+            <div class="results-header">
+                <span class="results-count">共找到 <strong id="totalCount">156</strong> 篇文献</span>
+                <div class="results-sort">
+                    排序：
+                    <select id="sortSelect">
+                        <option value="relevance" selected>相关度</option>
+                        <option value="date">最新发布</option>
+                        <option value="citations">引用量</option>
+                    </select>
+                </div>
+            </div>
+            <div class="paper-list" id="paperList"></div>
+            <div class="pagination" id="pagination"></div>
+        </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const query = new URLSearchParams(window.location.search).get('q') || '神经网络';
+        document.title = `${query} - 文献目录 - 研脉`;
+
+        const papersData = [
+            { id:1, title:'深度学习在自然语言处理中的最新进展', authors:'Zhang W, Li H, Chen Y', venue:'ACL 2025', year:2025, citations:342, keywords:['深度学习','NLP','Transformer'] },
+            { id:2, title:'大规模预训练语言模型的压缩与加速', authors:'Wang M, Liu X, Zhao K', venue:'ICML 2024', year:2024, citations:218, keywords:['模型压缩','知识蒸馏','量化'] },
+            { id:3, title:'基于图神经网络的药物分子性质预测', authors:'Chen L, Huang R, Wu S', venue:'Nature Machine Intelligence', year:2024, citations:196, keywords:['图神经网络','药物发现'] },
+            { id:4, title:'A Survey of Neural Architecture Search Methods', authors:'Elsken T, Metzen JH, Hutter F', venue:'JMLR', year:2023, citations:520, keywords:['NAS','AutoML','架构搜索'] },
+            { id:5, title:'面向中文医疗文本的命名实体识别研究', authors:'Liu Q, Zhang P, Yang M', venue:'中文信息学报', year:2025, citations:28, keywords:['NER','医疗文本','中文NLP'] },
+            { id:6, title:'对比学习在视觉表征中的应用与挑战', authors:'He K, Fan H, Wu Y', venue:'CVPR 2024', year:2024, citations:167, keywords:['对比学习','视觉表征','自监督'] },
+            { id:7, title:'基于注意力机制的知识图谱补全方法', authors:'Sun R, Cao Y, Wang J', venue:'AAAI 2024', year:2024, citations:89, keywords:['知识图谱','注意力机制','链接预测'] },
+            { id:8, title:'多模态大模型的幻觉问题：综述与展望', authors:'Li J, Zhang T, Huang Q', venue:'arXiv', year:2025, citations:45, keywords:['多模态','幻觉检测','大模型'] },
+        ];
+
+        function renderPapers(data) {
+            document.getElementById('paperList').innerHTML = data.map((p, i) => `
+                <div class="paper-card">
+                    <div class="paper-rank">${i + 1}</div>
+                    <div class="paper-body">
+                        <div class="paper-title">${p.title}</div>
+                        <div class="paper-authors">${p.authors}</div>
+                        <div class="paper-venue">📘 ${p.venue}</div>
+                        <div class="paper-tags">
+                            ${p.keywords.map(k => `<span class="paper-tag keyword">${k}</span>`).join('')}
+                            <span class="paper-tag year">${p.year}</span>
+                            <span class="paper-tag citation">被引 ${p.citations}</span>
+                        </div>
+                    </div>
+                    <div class="paper-action">
+                        <div class="paper-citations"><strong>${p.citations}</strong><span>引用</span></div>
+                        <button class="btn-outline" onclick="event.stopPropagation();showToast('查看论文详情')">查看详情</button>
+                    </div>
+                </div>`).join('');
+            document.getElementById('totalCount').textContent = data.length;
+        }
+
+        function renderPagination(total, current) {
+            const tp = Math.ceil(total / 8), c = document.getElementById('pagination');
+            if (tp <= 1) { c.innerHTML = ''; return; }
+            c.innerHTML = Array.from({length: tp}, (_, i) =>
+                `<button class="page-btn ${i+1===current?'active':''}" onclick="goToPage(${i+1})">${i+1}</button>`).join('');
+        }
+
+        function goToPage(page) {
+            renderPapers(papersData); renderPagination(papersData.length, page);
+            document.querySelector('.content').scrollIntoView({ behavior: 'smooth' }); showToast(`第 ${page} 页`);
+        }
+
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            let sorted = [...papersData];
+            if (this.value === 'date') sorted.sort((a, b) => b.year - a.year);
+            else if (this.value === 'citations') sorted.sort((a, b) => b.citations - a.citations);
+            renderPapers(sorted); renderPagination(sorted.length, 1); showToast('排序已更新');
+        });
+
+        document.getElementById('yearSlider').addEventListener('input', function() {
+            document.getElementById('yearLabel').textContent = this.value;
+            const filtered = papersData.filter(p => p.year <= parseInt(this.value));
+            renderPapers(filtered); renderPagination(filtered.length, 1);
+        });
+
+        const ni = document.getElementById('navSearchInput'), nc = document.getElementById('navSearchClear');
+        if (query) { ni.value = query; nc.style.display = 'flex'; }
+        ni.addEventListener('input', () => nc.style.display = ni.value.length ? 'flex' : 'none');
+        nc.addEventListener('click', () => { ni.value = ''; nc.style.display = 'none'; ni.focus(); });
+        ni.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && ni.value.trim())
+                window.location.href = 'search-loading.html?q=' + encodeURIComponent(ni.value.trim());
+        });
+
+        let tt;
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg; el.classList.add('show');
+            clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        renderPapers(papersData); renderPagination(papersData.length, 1);
+    </script>
+</body>
+</html>
