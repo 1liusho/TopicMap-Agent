@@ -1,0 +1,15 @@
+{
+  "id": "run-ce0f59fb",
+  "projectId": "proj-a01ed880",
+  "stage": "completed",
+  "status": "completed",
+  "startedAt": "2026-05-31T06:02:29+00:00",
+  "finishedAt": "2026-05-31T06:02:37+00:00",
+  "errorMessage": null,
+  "stats": {
+    "queryCount": 2,
+    "retrievedCount": 24,
+    "dedupedCount": 16,
+    "paperCount": 1
+  }
+}

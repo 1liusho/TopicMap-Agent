@@ -1,0 +1,63 @@
+{
+  "projectId": "proj-a01ed880",
+  "nodes": [
+    {
+      "id": "proj-a01ed880-paper-01",
+      "projectId": "proj-a01ed880",
+      "type": "Paper",
+      "label": "A Structured Review of Medical Image Registration",
+      "properties": {
+        "year": 2024,
+        "venue": "Demo Proceedings",
+        "doi": null,
+        "authors": [
+          "Research Lineage Demo"
+        ],
+        "relevanceScore": 0.82,
+        "qualityScore": 0.7
+      }
+    },
+    {
+      "id": "method-core",
+      "projectId": "proj-a01ed880",
+      "type": "Method",
+      "label": "Core Method",
+      "properties": {
+        "keywords": [
+          "medical image registration"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-proj-a01ed880-paper-01-method-core",
+      "projectId": "proj-a01ed880",
+      "sourceNodeId": "proj-a01ed880-paper-01",
+      "targetNodeId": "method-core",
+      "type": "uses",
+      "confidence": 0.76,
+      "evidenceSpanIds": [
+        "ev-proj-a01ed880-paper-01-method-core"
+      ],
+      "extractionMethod": "rule"
+    }
+  ],
+  "evidenceSpans": [
+    {
+      "id": "ev-proj-a01ed880-paper-01-method-core",
+      "paperId": "proj-a01ed880-paper-01",
+      "text": "A mock review seed generated for the topic Medical Image Registration.",
+      "page": null,
+      "section": "abstract",
+      "sourceType": "abstract"
+    }
+  ],
+  "stats": {
+    "paperCount": 1,
+    "edgeCount": 1,
+    "evidenceCount": 1,
+    "methodCount": 1
+  },
+  "generatedAt": "2026-05-31T06:02:37+00:00"
+}

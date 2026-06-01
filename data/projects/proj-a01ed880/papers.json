@@ -1,0 +1,22 @@
+[
+  {
+    "id": "proj-a01ed880-paper-01",
+    "title": "A Structured Review of Medical Image Registration",
+    "authors": [
+      "Research Lineage Demo"
+    ],
+    "year": 2024,
+    "venue": "Demo Proceedings",
+    "doi": null,
+    "abstract": "A mock review seed generated for the topic Medical Image Registration.",
+    "url": "https://example.org/papers/proj-a01ed880/1",
+    "citationCount": 0,
+    "sourceIds": [
+      "openalex",
+      "semantic_scholar"
+    ],
+    "relevanceScore": 0.82,
+    "qualityScore": 0.7,
+    "isKept": true
+  }
+]

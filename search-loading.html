@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索中 - 研脉</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f8fb; --surface: #ffffff; --surface2: #f0f1f6;
+            --border: #e4e6ed; --border2: #eef0f4;
+            --text: #1a1d2e; --text2: #6b708a; --text3: #9ca0b4;
+            --purple: #6c5ce7; --purple-light: #8b7cf7; --purple-dark: #5a4bd1;
+            --purple-bg: rgba(108,92,231,0.06); --teal: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, sans-serif;
+            background: var(--bg); color: var(--text);
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+
+        .bg-decor {
+            position: fixed; border-radius: 50%;
+            filter: blur(130px); opacity: 0.3;
+            pointer-events: none; z-index: 0;
+        }
+        .bg-decor.d1 { width: 450px; height: 450px; background: #e8e4ff; top: -100px; left: 30%; }
+
+        /* Navbar */
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; height: 60px; padding: 0 40px;
+            background: rgba(255,255,255,0.75); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); gap: 16px;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6c5ce7, #8b7cf7); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 800; font-size: 18px;
+            box-shadow: 0 4px 16px rgba(108,92,231,0.25);
+        }
+        .nav-title { font-size: 19px; font-weight: 700; letter-spacing: 2px; }
+        .nav-search {
+            flex: 1; max-width: 420px; margin-left: 24px;
+            display: flex; align-items: center; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
+            transition: all 0.2s;
+        }
+        .nav-search:focus-within { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-bg); background: #fff; }
+        .nav-search input {
+            flex: 1; border: none; outline: none; font-size: 13px;
+            color: var(--text); background: transparent; font-family: inherit;
+        }
+        .nav-search input::placeholder { color: var(--text3); }
+        .nav-search button { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; }
+        .nav-tabs { display: flex; gap: 4px; margin-left: 24px; }
+        .nav-tab {
+            padding: 7px 16px; border-radius: 9px; font-size: 13px; font-weight: 500;
+            color: var(--text2); text-decoration: none; transition: all 0.2s;
+        }
+        .nav-tab:hover { color: var(--text); background: var(--surface2); }
+        .nav-back {
+            background: none; border: none; color: var(--text2); cursor: pointer;
+            font-size: 13px; padding: 7px 14px; border-radius: 9px;
+            display: flex; align-items: center; gap: 4px; transition: all 0.2s;
+            margin-left: auto; text-decoration: none; font-family: inherit;
+        }
+        .nav-back:hover { color: var(--purple); background: var(--purple-bg); }
+
+        /* Main */
+        .main-container {
+            position: relative; z-index: 1;
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            max-width: 680px; margin: 0 auto; padding: 60px 24px;
+        }
+
+        /* Loader */
+        .loader-ring {
+            position: relative; width: 96px; height: 96px; margin-bottom: 48px;
+        }
+        .loader-ring svg { width: 96px; height: 96px; transform: rotate(-90deg); }
+        .loader-ring .track { fill: none; stroke: var(--border); stroke-width: 3; }
+        .loader-ring .fill {
+            fill: none; stroke: url(#grad);
+            stroke-width: 3; stroke-linecap: round;
+            stroke-dasharray: 251; stroke-dashoffset: 251;
+            animation: ring-fill 3s ease-in-out infinite;
+        }
+        @keyframes ring-fill {
+            0%{stroke-dashoffset:251} 50%{stroke-dashoffset:50} 100%{stroke-dashoffset:251}
+        }
+        .loader-core {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px; height: 20px;
+            background: linear-gradient(135deg, #6c5ce7, #8b7cf7);
+            border-radius: 50%;
+            animation: core-pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes core-pulse {
+            0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}
+            50%{transform:translate(-50%,-50%) scale(1.15);opacity:0.8}
+        }
+
+        .loading-query { font-size: 18px; font-weight: 600; margin-bottom: 8px; text-align: center; }
+        .loading-query span { color: var(--purple); }
+        .loading-text { font-size: 13px; color: var(--text3); margin-bottom: 56px; display: flex; align-items: center; gap: 4px; }
+        .dots { display: inline-flex; gap: 3px; }
+        .dots span { width: 4px; height: 4px; background: var(--text3); border-radius: 50%; animation: dot-bounce 1.4s ease-in-out infinite both; }
+        .dots span:nth-child(1){animation-delay:0s} .dots span:nth-child(2){animation-delay:0.16s} .dots span:nth-child(3){animation-delay:0.32s}
+        @keyframes dot-bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-7px)} }
+
+        /* Steps */
+        .steps { display: flex; gap: 32px; margin-bottom: 60px; }
+        .step { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--text3); transition: all 0.4s; }
+        .step .dot2 { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); transition: all 0.4s; }
+        .step.active { color: var(--purple); }
+        .step.active .dot2 { background: var(--purple); animation: step-pulse 1s ease-in-out infinite; }
+        @keyframes step-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,0.4)} 50%{box-shadow:0 0 0 8px rgba(108,92,231,0)} }
+        .step.done { color: var(--teal); }
+        .step.done .dot2 { background: var(--teal); }
+
+        /* Results */
+        .results-section { width: 100%; display: none; animation: fade-up 0.5s ease; }
+        .results-section.ready { display: block; }
+        @keyframes fade-up { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+        .result-summary { text-align: center; padding: 0 0 36px; margin-bottom: 36px; border-bottom: 1px solid var(--border); }
+        .result-summary h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+        .result-summary .count { color: var(--purple); font-weight: 700; }
+        .result-summary p { font-size: 13px; color: var(--text3); }
+
+        .action-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+        .action-card {
+            display: flex; flex-direction: column; align-items: center; gap: 18px;
+            padding: 48px 28px; background: var(--surface);
+            border: 1px solid var(--border2); border-radius: 20px;
+            cursor: pointer; transition: all 0.35s;
+            text-decoration: none; color: inherit; position: relative; overflow: hidden;
+        }
+        .action-card::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            opacity: 0; transition: opacity 0.35s;
+        }
+        .action-card.card-papers::after { background: linear-gradient(90deg, #6c5ce7, #8b7cf7); }
+        .action-card.card-graph::after { background: linear-gradient(90deg, #10b981, #34d399); }
+        .action-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.06); }
+        .action-card.card-papers:hover { border-color: rgba(108,92,231,0.25); }
+        .action-card.card-graph:hover { border-color: rgba(16,185,129,0.25); }
+        .action-card:hover::after { opacity: 1; }
+
+        .card-icon-box {
+            width: 68px; height: 68px; border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.35s;
+        }
+        .action-card:hover .card-icon-box { transform: scale(1.06); }
+        .card-icon-box.papers { background: var(--purple-bg); color: var(--purple); }
+        .card-icon-box.graph { background: rgba(16,185,129,0.08); color: var(--teal); }
+
+        .action-card h3 { font-size: 17px; font-weight: 700; }
+        .action-card p { font-size: 12px; color: var(--text3); text-align: center; line-height: 1.7; }
+        .card-arrow {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 12px; font-weight: 600; color: var(--purple);
+            opacity: 0; transform: translateY(4px); transition: all 0.3s;
+        }
+        .action-card:hover .card-arrow { opacity: 1; transform: translateY(0); }
+        .card-arrow.graph-arrow { color: var(--teal); }
+
+        @media (max-width: 640px) {
+            .navbar { padding: 0 16px; }
+            .nav-tabs { display: none; }
+            .nav-search { max-width: 160px; margin-left: 8px; }
+            .action-cards { grid-template-columns: 1fr; }
+            .action-card { padding: 32px 20px; }
+            .steps { gap: 16px; flex-wrap: wrap; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-decor d1"></div>
+
+    <nav class="navbar">
+        <a class="nav-brand" href="index.html">
+            <div class="logo-icon">研</div>
+            <span class="nav-title">研脉</span>
+        </a>
+        <div class="nav-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca0b4" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="navSearchInput" placeholder="搜索研究主题、论文、学者..." autocomplete="off">
+            <button id="navSearchClear" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="nav-tabs">
+            <a class="nav-tab" href="papers.html">文献目录</a>
+            <a class="nav-tab" href="knowledge-graph.html">知识图谱</a>
+        </div>
+        <a class="nav-back" href="index.html">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            返回首页
+        </a>
+    </nav>
+
+    <main class="main-container">
+        <div id="loadingSection">
+            <div class="loader-ring">
+                <svg viewBox="0 0 96 96">
+                    <defs>
+                        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#6c5ce7"/><stop offset="100%" stop-color="#8b7cf7"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="track" cx="48" cy="48" r="40"/>
+                    <circle class="fill" cx="48" cy="48" r="40"/>
+                </svg>
+                <div class="loader-core"></div>
+            </div>
+            <p class="loading-query">正在搜索 "<span id="loadingQuery">神经网络</span>"</p>
+            <p class="loading-text">研脉正在为您检索相关文献<span class="dots"><span></span><span></span><span></span></span></p>
+            <div class="steps" id="searchSteps">
+                <div class="step active" id="step1"><span class="dot2"></span>检索文献</div>
+                <div class="step" id="step2"><span class="dot2"></span>分析关联</div>
+                <div class="step" id="step3"><span class="dot2"></span>构建图谱</div>
+                <div class="step" id="step4"><span class="dot2"></span>整理结果</div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="result-summary">
+                <h2>找到 <span class="count" id="resultCount">156</span> 篇相关文献</h2>
+                <p>请选择您要查看的结果视图</p>
+            </div>
+            <div class="action-cards">
+                <a class="action-card card-papers" href="papers.html">
+                    <div class="card-icon-box papers">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            <line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <h3>文献目录</h3>
+                    <p>按相关度排序的文献列表<br>支持筛选、排序、导出</p>
+                    <span class="card-arrow">查看文献 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+                </a>
+                <a class="action-card card-graph" href="knowledge-graph.html">
+                    <div class="card-icon-box graph">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/>
+                            <line x1="12" y1="7.5" x2="7.3" y2="10.2"/><line x1="12" y1="7.5" x2="16.7" y2="10.2"/><line x1="7.3" y1="13.8" x2="10.5" y2="17"/><line x1="16.7" y1="13.8" x2="13.5" y2="17"/>
+                        </svg>
+                    </div>
+                    <h3>知识图谱</h3>
+                    <p>可视化研究脉络与关联<br>作者网络、主题聚类、引用关系</p>
+                    <span class="card-arrow graph-arrow">查看图谱 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const query = params.get('q') || '神经网络';
+        document.getElementById('loadingQuery').textContent = query;
+        const navInput = document.getElementById('navSearchInput');
+        if (navInput) navInput.value = query;
+
+        const TOTAL_TIME = 3500;
+        [{time:600,step:1},{time:1300,step:2},{time:2100,step:3},{time:2800,step:4}].forEach(({time,step})=>{
+            setTimeout(()=>{for(let i=1;i<=4;i++){const e=document.getElementById('step'+i);e.className=i<step?'step done':i===step?'step active':'step'}},time);
+        });
+
+        setTimeout(()=>{
+            document.getElementById('loadingSection').style.display='none';
+            document.getElementById('resultsSection').classList.add('ready');
+            document.getElementById('resultCount').textContent=Math.floor(Math.random()*200)+50;
+        }, TOTAL_TIME);
+
+        const nsc = document.getElementById('navSearchClear');
+        navInput.addEventListener('input',()=>{nsc.style.display=navInput.value.length?'flex':'none'});
+        nsc.addEventListener('click',()=>{navInput.value='';nsc.style.display='none';navInput.focus()});
+        navInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&navInput.value.trim())window.location.href='search-loading.html?q='+encodeURIComponent(navInput.value.trim())});
+        document.querySelectorAll('.action-card').forEach(card=>{card.addEventListener('click',function(){this.setAttribute('href',this.getAttribute('href')+'?q='+encodeURIComponent(query))})});
+    </script>
+</body>
+</html>

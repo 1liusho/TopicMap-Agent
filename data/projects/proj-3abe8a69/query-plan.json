@@ -1,0 +1,57 @@
+{
+  "projectId": "proj-3abe8a69",
+  "keywordGroups": [
+    {
+      "label": "core-topic",
+      "keywords": [
+        "Fabry-Perot cavity antenna",
+        "FPCA",
+        "resonant cavity antenna",
+        "partially reflective surface antenna"
+      ],
+      "rationale": "核心主题词与常见中英文别名。"
+    },
+    {
+      "label": "research-goal",
+      "keywords": [
+        "梳理关键技术路线、指标和研究空白"
+      ],
+      "rationale": "用研究目标限定综述、比较或趋势分析的检索方向。"
+    },
+    {
+      "label": "domain-context",
+      "keywords": [
+        "天线与电磁"
+      ],
+      "rationale": "保留学科上下文，减少跨领域噪声。"
+    }
+  ],
+  "searchQueries": [
+    {
+      "source": "openalex",
+      "query": "Fabry-Perot cavity antenna AND 梳理关键技术路线、指标和研究空白 (2019 to 2026)",
+      "rationale": "第一轮用核心主题词和目标词快速形成候选论文池。"
+    },
+    {
+      "source": "semantic_scholar",
+      "query": "Fabry-Perot cavity antenna AND 梳理关键技术路线、指标和研究空白 (2019 to 2026)",
+      "rationale": "第一轮用核心主题词和目标词快速形成候选论文池。"
+    }
+  ],
+  "sourceStrategy": [
+    {
+      "source": "openalex",
+      "rationale": "覆盖面广，适合首轮论文池扩充和元数据补全。",
+      "priority": 1
+    },
+    {
+      "source": "semantic_scholar",
+      "rationale": "便于补充引用信息与相关论文推荐。",
+      "priority": 2
+    }
+  ],
+  "notes": [
+    "当前 Query Planner 为启发式版本，后续替换为可编辑的结构化规划器。",
+    "关键词组应在前端允许人工微调，再进入正式检索流程。"
+  ]
+}

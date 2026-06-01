@@ -1,0 +1,44 @@
+{
+  "projectId": "proj-a01ed880",
+  "summary": "已基于 1 篇论文生成 mock 研究报告。 当前更适合验证页面和数据流，后续替换为真实抽取与证据校验。",
+  "sections": [
+    {
+      "id": "overview",
+      "title": "检索概览",
+      "content": "本轮围绕“Medical Image Registration”整理了 1 篇保留论文，来源包括 openalex, semantic_scholar。当前使用通用 mock 规则，为后续真实抽取和图谱构建预留接口。"
+    },
+    {
+      "id": "routes",
+      "title": "技术路线",
+      "content": "- Core Method：关联 1 篇论文。"
+    },
+    {
+      "id": "metrics",
+      "title": "指标与证据观察",
+      "content": "当前 mock 图谱还没有形成稳定的指标节点。"
+    },
+    {
+      "id": "gaps",
+      "title": "研究空白建议",
+      "content": "- 需要补充真实检索与抽取结果，才能形成更可信的研究空白总结。\n- 还需要加入证据置信度与人工校正流程。"
+    }
+  ],
+  "researchGaps": [
+    "需要补充真实检索与抽取结果，才能形成更可信的研究空白总结。",
+    "还需要加入证据置信度与人工校正流程。"
+  ],
+  "citations": [
+    {
+      "paperId": "proj-a01ed880-paper-01",
+      "title": "A Structured Review of Medical Image Registration",
+      "authors": [
+        "Research Lineage Demo"
+      ],
+      "year": 2024,
+      "venue": "Demo Proceedings",
+      "doi": null
+    }
+  ],
+  "markdown": "# Medical Image Registration 研究报告\n\n> 已基于 1 篇论文生成 mock 研究报告。 当前更适合验证页面和数据流，后续替换为真实抽取与证据校验。\n\n## 检索概览\n\n本轮围绕“Medical Image Registration”整理了 1 篇保留论文，来源包括 openalex, semantic_scholar。当前使用通用 mock 规则，为后续真实抽取和图谱构建预留接口。\n\n## 技术路线\n\n- Core Method：关联 1 篇论文。\n\n## 指标与证据观察\n\n当前 mock 图谱还没有形成稳定的指标节点。\n\n## 研究空白建议\n\n- 需要补充真实检索与抽取结果，才能形成更可信的研究空白总结。\n- 还需要加入证据置信度与人工校正流程。\n\n## 引用列表\n\n- Research Lineage Demo (2024). A Structured Review of Medical Image Registration. Demo Proceedings",
+  "generatedAt": "2026-05-31T06:02:37+00:00"
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "proj-3abe8a69-paper-01",
+    "title": "High-Gain Fabry-Perot Cavity Antenna Using a Partially Reflective Surface",
+    "authors": [
+      "J. Huang",
+      "M. Li"
+    ],
+    "year": 2021,
+    "venue": "IEEE Transactions on Antennas and Propagation",
+    "doi": "10.1109/TAP.2021.000001",
+    "abstract": "The paper studies partially reflective surface design for compact Fabry-Perot cavity antennas with improved gain-bandwidth trade-offs.",
+    "url": "https://example.org/papers/proj-3abe8a69/1",
+    "citationCount": 64,
+    "sourceIds": [
+      "openalex",
+      "semantic_scholar"
+    ],
+    "relevanceScore": 0.95,
+    "qualityScore": 0.89,
+    "isKept": true
+  },
+  {
+    "id": "proj-3abe8a69-paper-02",
+    "title": "Wideband Resonant Cavity Antenna with Metasurface Superstrate",
+    "authors": [
+      "Y. Chen",
+      "K. Zhang"
+    ],
+    "year": 2023,
+    "venue": "IEEE Access",
+    "doi": "10.1109/ACCESS.2023.000002",
+    "abstract": "A metasurface superstrate is used to widen the impedance bandwidth of a resonant cavity antenna while preserving high directivity.",
+    "url": "https://example.org/papers/proj-3abe8a69/2",
+    "citationCount": 28,
+    "sourceIds": [
+      "openalex",
+      "semantic_scholar"
+    ],
+    "relevanceScore": 0.91,
+    "qualityScore": 0.78,
+    "isKept": true
+  },
+  {
+    "id": "proj-3abe8a69-paper-03",
+    "title": "Low-Profile Fabry-Perot Antenna for Millimeter-Wave Applications",
+    "authors": [
+      "S. Kumar",
+      "R. Gupta"
+    ],
+    "year": 2020,
+    "venue": "IET Microwaves, Antennas & Propagation",
+    "doi": "10.1049/iet-map.2020.000003",
+    "abstract": "This work proposes a low-profile cavity geometry for millimeter-wave Fabry-Perot antennas targeting 5G base-station scenarios.",
+    "url": "https://example.org/papers/proj-3abe8a69/3",
+    "citationCount": 41,
+    "sourceIds": [
+      "openalex",
+      "semantic_scholar"
+    ],
+    "relevanceScore": 0.88,
+    "qualityScore": 0.81,
+    "isKept": true
+  },
+  {
+    "id": "proj-3abe8a69-paper-04",
+    "title": "Reconfigurable Partially Reflective Surface Antenna Based on PIN Diodes",
+    "authors": [
+      "L. Wang",
+      "P. Xu"
+    ],
+    "year": 2022,
+    "venue": "Progress In Electromagnetics Research",
+    "doi": "10.2528/PIER2200004",
+    "abstract": "PIN-diode controlled partially reflective surfaces enable beam and frequency tuning in Fabry-Perot style antennas.",
+    "url": "https://example.org/papers/proj-3abe8a69/4",
+    "citationCount": 23,
+    "sourceIds": [
+      "openalex",
+      "semantic_scholar"
+    ],
+    "relevanceScore": 0.84,
+    "qualityScore": 0.77,
+    "isKept": true
+  },
+  {
+    "id": "proj-3abe8a69-paper-05",
+    "title": "Review of Fabry-Perot Cavity Antennas: Structures, Bandwidth Enhancement, and Beam Control",
+    "authors": [
+      "A. Desai",
+      "H. Zhao"
+    ],
+    "year": 2024,
+    "venue": "International Journal of RF and Microwave Computer-Aided Engineering",
+    "doi": "10.1002/mmce.000005",
+    "abstract": "A review summarizing cavity geometry, PRS design, bandwidth enhancement techniques, and beam-steering methods for Fabry-Perot antennas.",
+    "url": "https://example.org/papers/proj-3abe8a69/5",
+    "citationCount": 12,
+    "sourceIds": [
+      "openalex",
+      "semantic_scholar"
+    ],
+    "relevanceScore": 0.97,
+    "qualityScore": 0.83,
+    "isKept": true
+  }
+]
