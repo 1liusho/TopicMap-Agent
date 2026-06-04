@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 科研检索图谱 — Research Knowledge Graph</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fdf6f0;
+    color: #5a3e4b;
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ── 顶部搜索栏 ── */
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(255, 245, 240, 0.94);
+    backdrop-filter: blur(14px);
+    border-bottom: 1.5px solid rgba(255,182,193,0.45);
+    padding: 12px 26px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 18px rgba(255,160,180,0.1);
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f9a8d4, #c084fc, #fb7185);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+
+  #searchBox {
+    flex: 1;
+    max-width: 580px;
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.82);
+    border: 1.5px solid rgba(249,168,212,0.55);
+    border-radius: 30px;
+    padding: 0 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  #searchBox:focus-within {
+    border-color: #f9a8d4;
+    box-shadow: 0 0 0 3px rgba(249,168,212,0.18);
+  }
+  #searchInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #6b3a52;
+    font-size: 14px;
+    padding: 9px 0;
+  }
+  #searchInput::placeholder { color: rgba(180,130,150,0.5); }
+
+  #searchBtn {
+    background: linear-gradient(135deg, #f9a8d4, #c084fc);
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 13px;
+    padding: 6px 18px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  #searchBtn:hover { opacity: 0.85; transform: scale(1.04); }
+
+  .hint-tags {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    background: rgba(249,168,212,0.12);
+    border: 1px solid rgba(249,168,212,0.45);
+    border-radius: 14px;
+    font-size: 12px;
+    padding: 4px 11px;
+    cursor: pointer;
+    color: #c060a0;
+    transition: background 0.2s;
+  }
+  .tag:hover { background: rgba(249,168,212,0.28); }
+
+  /* ── 主画布 ── */
+  #canvas-container {
+    position: fixed;
+    top: 58px; bottom: 0; left: 0; right: 0;
+  }
+  #three-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── 左侧论文列表 ── */
+  #paper-list {
+    position: fixed;
+    top: 58px;
+    left: 0;
+    width: 292px;
+    bottom: 0;
+    background: rgba(255,248,245,0.95);
+    backdrop-filter: blur(10px);
+    border-right: 1.5px solid rgba(255,182,193,0.3);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+    z-index: 50;
+    padding: 14px 0;
+    box-shadow: 3px 0 18px rgba(249,168,212,0.1);
+  }
+  #paper-list.open { transform: translateX(0); }
+
+  .list-header {
+    padding: 0 16px 10px;
+    font-size: 13px;
+    color: #d06090;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(249,168,212,0.2);
+    margin-bottom: 6px;
+  }
+
+  .paper-item {
+    padding: 9px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,200,220,0.15);
+    transition: background 0.18s;
+  }
+  .paper-item:hover { background: rgba(249,168,212,0.1); }
+  .paper-item.active { background: rgba(249,168,212,0.2); }
+  .paper-item .year {
+    font-size: 11px;
+    color: #c084fc;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .paper-item .title {
+    font-size: 12px;
+    color: #7a4a60;
+    line-height: 1.4;
+  }
+
+  /* ── 右侧详情面板 ── */
+  #detail-panel {
+    position: fixed;
+    top: 58px;
+    right: 0;
+    width: 330px;
+    bottom: 0;
+    background: rgba(255,248,245,0.97);
+    backdrop-filter: blur(14px);
+    border-left: 1.5px solid rgba(255,182,193,0.3);
+    overflow-y: auto;
+    transform: translateX(110%);
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+    z-index: 50;
+    padding: 20px 18px;
+    box-shadow: -3px 0 18px rgba(249,168,212,0.1);
+  }
+  #detail-panel.open { transform: translateX(0); }
+
+  #detail-panel .dp-year {
+    font-size: 11.5px;
+    color: #c084fc;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 7px;
+  }
+  #detail-panel .dp-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #5a2d42;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  #detail-panel .dp-authors {
+    font-size: 12px;
+    color: #a07080;
+    margin-bottom: 12px;
+  }
+  #detail-panel .dp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  #detail-panel .dp-tag {
+    background: rgba(192,132,252,0.12);
+    border: 1px solid rgba(192,132,252,0.35);
+    border-radius: 10px;
+    font-size: 11px;
+    padding: 2px 9px;
+    color: #a060d0;
+  }
+  #detail-panel .dp-abstract {
+    font-size: 12.5px;
+    color: #8a6070;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  #detail-panel .dp-citations {
+    font-size: 12px;
+    color: #f472b6;
+    margin-bottom: 6px;
+  }
+  #detail-panel .dp-links a {
+    display: inline-block;
+    margin-right: 9px;
+    font-size: 12px;
+    color: #c084fc;
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(192,132,252,0.4);
+  }
+  .close-btn {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: rgba(249,168,212,0.15);
+    border: none;
+    color: #d06090;
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .close-btn:hover { background: rgba(249,168,212,0.35); }
+
+  /* ── 时间轴 ── */
+  #timeline {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    background: rgba(255,248,245,0.9);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(249,168,212,0.35);
+    border-radius: 30px;
+    padding: 7px 18px;
+    z-index: 60;
+    user-select: none;
+    box-shadow: 0 4px 20px rgba(249,168,212,0.18);
+  }
+  .tl-year {
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 14px;
+    cursor: pointer;
+    color: #c0a0b0;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .tl-year::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 1px; height: 10px;
+    background: rgba(249,168,212,0.25);
+  }
+  .tl-year:last-child::after { display: none; }
+  .tl-year.active {
+    background: linear-gradient(135deg, rgba(249,168,212,0.3), rgba(192,132,252,0.2));
+    color: #c060a0;
+    font-weight: 700;
+  }
+  .tl-year:hover { color: #d060a0; }
+
+  /* ── 工具栏 ── */
+  #toolbar {
+    position: fixed;
+    top: 74px;
+    left: 14px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .tool-btn {
+    background: rgba(255,248,245,0.9);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(249,168,212,0.35);
+    border-radius: 10px;
+    color: #d06090;
+    width: 36px; height: 36px;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(249,168,212,0.1);
+  }
+  .tool-btn:hover { background: rgba(249,168,212,0.2); border-color: #f9a8d4; }
+  .tool-btn.active { background: rgba(249,168,212,0.3); border-color: #f9a8d4; color: #c040a0; }
+
+  /* ── 统计栏 ── */
+  #stats-bar {
+    position: fixed;
+    top: 74px;
+    right: 14px;
+    z-index: 60;
+    background: rgba(255,248,245,0.9);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(249,168,212,0.3);
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-size: 12px;
+    line-height: 1.8;
+    min-width: 130px;
+    box-shadow: 0 2px 12px rgba(249,168,212,0.1);
+  }
+  .stat-row { display: flex; justify-content: space-between; gap: 12px; }
+  .stat-label { color: #c0a0b0; }
+  .stat-val { color: #c060a0; font-weight: 700; }
+
+  /* ── 加载遮罩 ── */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: #fdf6f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    transition: opacity 0.5s;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    font-size: 42px;
+    animation: bounce 0.7s ease-in-out infinite alternate;
+    margin-bottom: 14px;
+  }
+  @keyframes bounce { from { transform: translateY(0) scale(1); } to { transform: translateY(-10px) scale(1.1); } }
+  .loading-text { font-size: 14px; color: #c090b0; }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(255,248,250,0.97);
+    border: 1.5px solid rgba(249,168,212,0.5);
+    border-radius: 12px;
+    padding: 9px 13px;
+    font-size: 12.5px;
+    max-width: 230px;
+    line-height: 1.5;
+    z-index: 150;
+    opacity: 0;
+    transition: opacity 0.15s;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(249,168,212,0.2);
+  }
+  #tooltip.show { opacity: 1; }
+  #tooltip .tt-year { color: #c084fc; font-weight: 700; margin-bottom: 3px; }
+  #tooltip .tt-title { color: #5a3040; margin-bottom: 4px; font-size: 12px; }
+  #tooltip .tt-focus { color: #d06090; font-size: 11.5px; }
+
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(249,168,212,0.3); border-radius: 4px; }
+
+  /* 列表切换按钮 */
+  #toggle-list {
+    position: fixed;
+    top: 74px;
+    left: 300px;
+    z-index: 55;
+    background: rgba(255,248,245,0.9);
+    border: 1.5px solid rgba(249,168,212,0.35);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    color: #d06090;
+    padding: 5px 7px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: left 0.4s cubic-bezier(.4,0,.2,1), background 0.2s;
+  }
+  #toggle-list.closed { left: 10px; }
+  #toggle-list:hover { background: rgba(249,168,212,0.2); }
+
+  /* CSS 节点标签 */
+  .node-label {
+    position: fixed;
+    pointer-events: none;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    z-index: 30;
+    text-align: center;
+    transition: opacity 0.2s;
+  }
+  .node-label .lbl-year {
+    display: inline-block;
+    background: rgba(255,240,248,0.92);
+    border: 1px solid rgba(249,168,212,0.5);
+    border-radius: 8px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #c060a0;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(249,168,212,0.18);
+  }
+</style>
+</head>
+<body>
+
+<!-- 加载遮罩 -->
+<div id="loading">
+  <div class="spinner">🐾</div>
+  <div class="loading-text">正在初始化可爱科研图谱~</div>
+</div>
+
+<!-- 顶部搜索栏 -->
+<div id="header">
+  <div class="logo">🐾 ResearchGraph</div>
+  <div id="searchBox">
+    <input id="searchInput" type="text" placeholder="输入研究关键词，例如：深度学习、量子计算、碳中和..." />
+    <button id="searchBtn">🔍 构建图谱</button>
+  </div>
+  <div class="hint-tags">
+    <span class="tag" onclick="quickSearch('深度学习')">深度学习</span>
+    <span class="tag" onclick="quickSearch('大语言模型')">大语言模型</span>
+    <span class="tag" onclick="quickSearch('量子计算')">量子计算</span>
+    <span class="tag" onclick="quickSearch('CRISPR基因编辑')">CRISPR</span>
+    <span class="tag" onclick="quickSearch('碳中和')">碳中和</span>
+    <span class="tag" onclick="quickSearch('物理学')">物理学</span>
+    <span class="tag" onclick="quickSearch('数学')">数学</span>
+    <span class="tag" onclick="quickSearch('材料科学')">材料科学</span>
+    <span class="tag" onclick="quickSearch('机器人')">机器人</span>
+    <span class="tag" onclick="quickSearch('通信工程')">通信工程</span>
+    <span class="tag" onclick="quickSearch('肿瘤学')">肿瘤学</span>
+    <span class="tag" onclick="quickSearch('公共卫生')">公共卫生</span>
+    <span class="tag" onclick="quickSearch('经济学')">经济学</span>
+    <span class="tag" onclick="quickSearch('合成生物学')">合成生物学</span>
+    <span class="tag" onclick="quickSearch('脑科学')">脑科学</span>
+    <span class="tag" onclick="quickSearch('环境科学')">环境科学</span>
+  </div>
+</div>
+
+<!-- 左侧论文列表 -->
+<div id="paper-list">
+  <div class="list-header" id="list-header">🐾 论文列表 · 0 篇</div>
+  <div id="paper-items"></div>
+</div>
+<button id="toggle-list" class="closed" onclick="toggleList()">🐾</button>
+
+<!-- 三维画布 -->
+<div id="canvas-container">
+  <canvas id="three-canvas"></canvas>
+</div>
+
+<!-- 工具栏 -->
+<div id="toolbar">
+  <button class="tool-btn" title="重置视角" onclick="resetCamera()">⌖</button>
+  <button class="tool-btn" title="自动旋转" id="autoRotateBtn" onclick="toggleAutoRotate()">↻</button>
+  <button class="tool-btn" title="放大" onclick="zoomIn()">＋</button>
+  <button class="tool-btn" title="缩小" onclick="zoomOut()">－</button>
+  <button class="tool-btn" title="切换布局" id="layoutBtn" onclick="toggleLayout()">⬡</button>
+</div>
+
+<!-- 统计栏 -->
+<div id="stats-bar">
+  <div class="stat-row"><span class="stat-label">论文数</span><span class="stat-val" id="stat-count">0</span></div>
+  <div class="stat-row"><span class="stat-label">关系数</span><span class="stat-val" id="stat-edges">0</span></div>
+  <div class="stat-row"><span class="stat-label">时间跨度</span><span class="stat-val" id="stat-span">—</span></div>
+  <div class="stat-row"><span class="stat-label">关键词</span><span class="stat-val" id="stat-kw">—</span></div>
+</div>
+
+<!-- 时间轴 -->
+<div id="timeline"></div>
+
+<!-- Tooltip -->
+<div id="tooltip">
+  <div class="tt-year" id="tt-year"></div>
+  <div class="tt-title" id="tt-title"></div>
+  <div class="tt-focus" id="tt-focus"></div>
+</div>
+
+<!-- 右侧详情面板 -->
+<div id="detail-panel">
+  <button class="close-btn" onclick="closeDetail()">✕</button>
+  <div class="dp-year" id="dp-year"></div>
+  <div class="dp-title" id="dp-title"></div>
+  <div class="dp-authors" id="dp-authors"></div>
+  <div class="dp-tags" id="dp-tags"></div>
+  <div class="dp-abstract" id="dp-abstract"></div>
+  <div class="dp-citations" id="dp-citations"></div>
+
+  <!-- 原文地址 -->
+  <div id="dp-url-block" style="margin-top:14px;">
+    <div style="font-size:11.5px;color:#c0a0b0;margin-bottom:5px;font-weight:600;">🔗 原文地址</div>
+    <div id="dp-url" style="font-size:12.5px;"></div>
+  </div>
+
+  <!-- 核心论点 -->
+  <div id="dp-core-block" style="margin-top:14px;">
+    <div style="font-size:11.5px;color:#c0a0b0;margin-bottom:5px;font-weight:600;">💡 核心论点</div>
+    <div id="dp-core" style="font-size:13px;line-height:1.75;color:#5a3e4b;background:rgba(249,168,212,0.07);border-radius:10px;padding:10px 13px;"></div>
+  </div>
+
+  <!-- 领域地位与逻辑关系 -->
+  <div id="dp-role-block" style="margin-top:14px;">
+    <div style="font-size:11.5px;color:#c0a0b0;margin-bottom:5px;font-weight:600;">🏛️ 领域地位 & 逻辑关系</div>
+    <div id="dp-role" style="font-size:12.5px;line-height:1.75;color:#5a3e4b;"></div>
+    <div id="dp-logic" style="margin-top:8px;font-size:12px;line-height:1.8;color:#7a5090;"></div>
+  </div>
+
+  <div class="dp-links" id="dp-links" style="margin-top:14px;"></div>
+
+  <div style="margin-top:16px; border-top:1px solid rgba(249,168,212,0.18); padding-top:12px;">
+    <div style="font-size:12px;color:#c0a0b0;margin-bottom:9px;">🐾 相关文献</div>
+    <div id="dp-related"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  猫爪形状生成器 — 用 Three.js 几何体组合
+// ══════════════════════════════════════════════
+
+/**
+ * 创建一个猫爪 Group — 毛绒3D动画风格：
+ *  - 白色毛绒主体（噪声凹凸 + 柔光）= 手掌区域
+ *  - 粉嫩肉垫（中心大垫 + 4趾垫）= 前面凸起
+ *  - 更圆润饱满，缩小尺寸，3D动画质感
+ */
+function createPawGroup(scale, color, emissiveColor) {
+  const group = new THREE.Group();
+
+  // ── 1) 白色毛绒手掌主体 ──
+  const pawGeo = new THREE.SphereGeometry(1, 28, 22);
+  pawGeo.scale(1.08, 0.78, 0.65);
+  // 给顶点加微噪声 → 毛绒凹凸感
+  const posArr = pawGeo.attributes.position.array;
+  for (let i = 0; i < posArr.length; i += 3) {
+    posArr[i]   += (Math.random() - 0.5) * 0.04;
+    posArr[i+1] += (Math.random() - 0.5) * 0.04;
+    posArr[i+2] += (Math.random() - 0.5) * 0.04;
+  }
+  pawGeo.computeVertexNormals();
+  const pawMat = new THREE.MeshPhongMaterial({
+    color: new THREE.Color(0xfff5f8),     // 奶白色
+    emissive: new THREE.Color(0xffe8f0).multiplyScalar(0.08),
+    shininess: 25,                         // 低光泽 = 毛绒哑光
+    specular: new THREE.Color(0xffd8e8),
+  });
+  group.add(new THREE.Mesh(pawGeo, pawMat));
+
+  // ── 2) 粉嫩大肉垫（中心，略微前凸）──
+  const padGeo = new THREE.SphereGeometry(0.62, 24, 18);
+  padGeo.scale(1.0, 0.85, 0.55);
+  const padMat = new THREE.MeshPhongMaterial({
+    color: new THREE.Color(0xf9a8d4),
+    emissive: new THREE.Color(0xf48cb8).multiplyScalar(0.15),
+    shininess: 50,
+    specular: new THREE.Color(0xffc0d8),
+  });
+  const pad = new THREE.Mesh(padGeo, padMat);
+  pad.position.set(0, -0.15, 0.38);
+  group.add(pad);
+
+  // ── 3) 四个趾垫（上方弧形排列，粉嫩，略前凸）──
+  const toePositions = [
+    { x: -0.58, y: 0.52, z: 0.28, sx: 1.0, sy: 0.92, sz: 0.6 },
+    { x: -0.20, y: 0.68, z: 0.32, sx: 0.95, sy: 0.9,  sz: 0.6 },
+    { x:  0.20, y: 0.68, z: 0.32, sx: 0.95, sy: 0.9,  sz: 0.6 },
+    { x:  0.58, y: 0.52, z: 0.28, sx: 1.0, sy: 0.92, sz: 0.6 },
+  ];
+  toePositions.forEach(pos => {
+    const tGeo = new THREE.SphereGeometry(0.24, 18, 14);
+    tGeo.scale(pos.sx, pos.sy, pos.sz);
+    // 毛绒微噪声
+    const tArr = tGeo.attributes.position.array;
+    for (let i = 0; i < tArr.length; i += 3) {
+      tArr[i]   += (Math.random() - 0.5) * 0.02;
+      tArr[i+1] += (Math.random() - 0.5) * 0.02;
+      tArr[i+2] += (Math.random() - 0.5) * 0.02;
+    }
+    tGeo.computeVertexNormals();
+    const tMat = new THREE.MeshPhongMaterial({
+      color: new THREE.Color(0xf9a8d4),
+      emissive: new THREE.Color(0xf48cb8).multiplyScalar(0.15),
+      shininess: 50,
+      specular: new THREE.Color(0xffc0d8),
+    });
+    const toe = new THREE.Mesh(tGeo, tMat);
+    toe.position.set(pos.x, pos.y, pos.z);
+    group.add(toe);
+  });
+
+  // ── 4) 中心小心形纹路 ──
+  const heartColor = new THREE.Color(0xe8709e);
+  [-0.10, 0.10].forEach(ox => {
+    const hGeo = new THREE.SphereGeometry(0.11, 12, 10);
+    hGeo.scale(1, 0.85, 0.4);
+    const hMat = new THREE.MeshPhongMaterial({
+      color: heartColor,
+      emissive: new THREE.Color(0xd06090).multiplyScalar(0.12),
+      shininess: 40,
+    });
+    const h = new THREE.Mesh(hGeo, hMat);
+    h.position.set(ox, -0.22, 0.68);
+    group.add(h);
+  });
+
+  group.scale.setScalar(scale);
+  group.userData = { isPaw: true, baseColor: new THREE.Color(color), allMats: [] };
+
+  // 收集所有材质用于高亮
+  group.traverse(c => { if (c.isMesh) group.userData.allMats.push(c.material); });
+
+  return group;
+}
+
+// ══════════════════════════════════════════════
+//  论文数据库
+// ══════════════════════════════════════════════
+const PAPER_DB = {
+  "深度学习": makePapers("深度学习", [
+    { year:2016, month:6, title:"Deep Residual Learning for Image Recognition", authors:"He K, Zhang X et al.", focus:"残差网络ResNet解决深层退化", citations:120000, abstract:"提出深度残差网络，通过跳跃连接解决极深网络退化问题，在ImageNet多项视觉任务达到最优性能。", coreArgument:"通过引入跳跃连接（skip connection）构建残差块，使极深网络可以直接优化残差映射而非底层映射，有效解决梯度消失和网络退化问题。", role:"深度学习发展史上的里程碑，开启了百层乃至千层深度网络训练的可能，奠定了现代计算机视觉的基础架构，被引用超过12万次，是CV领域最有影响力的论文之一。", paperUrl:"https://arxiv.org/abs/1512.03385", tags:["CNN","ResNet","图像识别"], venue:"CVPR 2016" },
+    { year:2016, month:10, title:"Generative Adversarial Networks in CV", authors:"Goodfellow I et al.", focus:"GAN对抗生成网络理论", citations:48000, abstract:"综述了GAN在计算机视觉领域的应用，包括图像生成、风格迁移和数据增强。", coreArgument:"提出生成器-判别器对抗训练框架，生成器试图生成逼真样本欺骗判别器，判别器试图区分真假样本，二者博弈达到纳什均衡。", role:"生成式AI的开山之作，奠定了GAN理论基础，直接催生了后续StyleGAN、CycleGAN等系列工作，是图像生成领域最重要的奠基论文。", paperUrl:"https://arxiv.org/abs/1406.2661", tags:["GAN","生成模型","图像生成"], venue:"NIPS 2016" },
+    { year:2017, month:6, title:"Attention Is All You Need", authors:"Vaswani A et al.", focus:"Transformer自注意力机制奠基", citations:95000, abstract:"提出完全基于注意力机制的Transformer架构，摒弃循环和卷积，在机器翻译达到最先进性能。", coreArgument:"完全抛弃RNN/CNN结构，仅用自注意力机制（Self-Attention）和前馈网络构建序列建模架构，通过多头注意力并行捕捉序列全局依赖关系。", role:"NLP领域划时代作品，彻底改变了序列建模范式，是BERT、GPT等所有后续大语言模型的基础架构，影响力跨越深度学习与NLP两大领域。", paperUrl:"https://arxiv.org/abs/1706.03762", tags:["Transformer","注意力","NLP"], venue:"NIPS 2017" },
+    { year:2017, month:7, title:"Densely Connected Convolutional Networks", authors:"Huang G et al.", focus:"DenseNet密集连接架构", citations:35000, abstract:"提出DenseNet，通过密集连接每层与后续所有层，缓解梯度消失，减少参数量。", coreArgument:"每一层都与之前所有层直接连接（复用特征），通过特征重用来提升梯度流动，在减少参数量的同时保持甚至提升模型性能。", role:"CNN架构优化的重要里程碑，因特征复用思想影响了后续EfficientNet等模型的轻量化设计，在计算机视觉顶会CVPR获得最佳论文奖。", paperUrl:"https://arxiv.org/abs/1608.06993", tags:["DenseNet","CNN","特征复用"], venue:"CVPR 2017" },
+    { year:2018, month:10, title:"BERT: Pre-training Deep Bidirectional Transformers", authors:"Devlin J et al.", focus:"双向预训练语言模型BERT", citations:85000, abstract:"提出BERT，通过掩码语言模型进行双向预训练，在11项NLP任务上刷新SOTA。", coreArgument:"通过掩码语言模型（MLM）和下一句预测（NSP）两个前置任务，在大规模无标注文本上预训练深度双向Transformer编码器，再针对下游任务微调。", role:"NLP预训练时代的开启者，证明了深度双向预训练的强大泛化能力，直接引发了NLP领域的预训练-微调范式革命，是后续所有预训练语言模型的重要参照。", paperUrl:"https://arxiv.org/abs/1810.04805", tags:["BERT","预训练","NLP"], venue:"NAACL 2019" },
+    { year:2018, month:3, title:"Deep Learning for Medical Image Analysis", authors:"Shen D, Wu G et al.", focus:"医学图像深度分析综述", citations:12000, abstract:"综述深度学习在医学图像分割、检测和诊断中的最新进展。", coreArgument:"系统梳理CNN在医学影像（CT、MRI、X光）中的三大核心应用：语义分割、病灶检测、计算机辅助诊断，并分析医学影像数据稀缺场景下的迁移学习策略。", role:"推动深度学习在医疗AI落地的关键综述，为医学影像AI研究提供了系统化框架，对医疗AI商业化有重要指导价值。", paperUrl:"https://arxiv.org/abs/1702.05747", tags:["医学图像","CNN","语义分割"], venue:"Annual Review 2018" },
+    { year:2019, month:6, title:"XLNet: Generalized Autoregressive Pretraining", authors:"Yang Z et al.", focus:"自回归预训练超越BERT", citations:18000, abstract:"提出广义自回归预训练XLNet，克服BERT掩码独立性假设缺陷，在多项NLP基准超越BERT。", coreArgument:"提出排列语言建模（Permutation Language Modeling），在保持自回归特性（无独立性假设）的同时，引入双向上下文信息，兼具AR和AE两种预训练范式的优势。", role:"BERT之后的重要改进工作，指出了BERT预训练中『掩码独立性假设』的理论缺陷，推动了后续预训练目标函数的持续演进。", paperUrl:"https://arxiv.org/abs/1906.08237", tags:["XLNet","语言模型","自回归"], venue:"NeurIPS 2019" },
+    { year:2019, month:5, title:"EfficientNet: Rethinking Model Scaling", authors:"Tan M, Le Q", focus:"神经网络复合缩放策略", citations:22000, abstract:"提出系统化神经网络缩放方法，通过均衡缩放深度、宽度和分辨率，以更少参数达最佳性能。", coreArgument:"提出复合缩放规则（Compound Scaling）：深度、宽度、分辨率三者不是独立缩放的，而是需要通过一个统一系数协调缩放，才能最大化模型精度与效率。", role:"模型高效化设计的重要指导论文，提出的复合缩放思想被广泛应用于移动端和边缘设备的模型优化，是轻量化深度学习的重要参考。", paperUrl:"https://arxiv.org/abs/1905.11946", tags:["EfficientNet","模型压缩","NAS"], venue:"ICML 2019" },
+    { year:2020, month:5, title:"GPT-3: Language Models are Few-Shot Learners", authors:"Brown T et al.", focus:"1750亿参数大语言模型", citations:45000, abstract:"展示1750亿参数GPT-3在少样本场景下的惊人泛化能力，无需微调完成多种任务。", coreArgument:"通过极大规模（1750亿参数）的GPT架构预训练，模型涌现出强大的少样本泛化能力——只需在提示中给出几个示例，无需梯度更新即可完成新任务。", role:"大模型『涌现能力』现象的发现者，证明了模型规模扩大能带来质的飞跃，开启了『预训练基础模型+提示词工程』的新范式，对AI产业影响深远。", paperUrl:"https://arxiv.org/abs/2005.14165", tags:["GPT-3","大模型","少样本"], venue:"NeurIPS 2020" },
+    { year:2020, month:10, title:"Vision Transformer (ViT)", authors:"Dosovitskiy A et al.", focus:"纯Transformer用于图像分类", citations:32000, abstract:"将Transformer直接应用于图像分类，图像切分为块序列，大规模数据集上超越CNN。", coreArgument:"将图像切分为固定大小的图像块（patches），将每个块线性映射为序列中的一个token，直接输入标准Transformer编码器，无需任何卷积操作。", role:"Transformer进军计算机视觉的标志性工作，证明纯注意力架构可以在大规模数据上超越CNN，直接催生了Swin Transformer、MAE等一系列ViT后续工作。", paperUrl:"https://arxiv.org/abs/2010.11929", tags:["ViT","Transformer","图像分类"], venue:"ICLR 2021" },
+    { year:2021, month:1, title:"DALL-E: Creating Images from Text", authors:"Ramesh A et al.", focus:"文本到图像生成模型", citations:8500, abstract:"提出DALL-E，通过Transformer自回归方式建模文本和图像像素，实现零样本文本到图像生成。", coreArgument:"将文本token和图像token拼接为单一序列，用Transformer自回归建模联合分布，通过离散变分自编码器（dVAE）将图像压缩为离散token，实现文本到图像的端到端生成。", role:"文本到图像生成领域的突破性工作，展示了多模态大模型在创意内容生成上的巨大潜力，为后续Stable Diffusion、Midjourney等产品的爆发奠定了技术基础。", paperUrl:"https://arxiv.org/abs/2102.12092", tags:["DALL-E","多模态","图像生成"], venue:"ICML 2021" },
+    { year:2021, month:3, title:"Swin Transformer: Hierarchical Vision", authors:"Liu Z et al.", focus:"分层视觉Transformer架构", citations:28000, abstract:"提出Swin Transformer，通过滑动窗口注意力和分层表示，成为视觉识别通用主干。", coreArgument:"提出分层Transformer架构，通过移位窗口（Shifted Windows）限制自注意力计算范围，在保持全局建模能力的同时大幅降低计算复杂度，使之适用于密集预测任务（检测、分割）。", role:"ViT在计算机视觉落地的重要改进，解决了原始ViT计算复杂度高、难以处理高分辨率图像的问题，成为视觉Transformer通用骨干网络的标准选择。", paperUrl:"https://arxiv.org/abs/2103.14030", tags:["Swin","Transformer","目标检测"], venue:"ICCV 2021" },
+    { year:2022, month:1, title:"ChatGPT and the Future of AI Assistants", authors:"OpenAI Research Team", focus:"对话式AI助手新范式", citations:6200, abstract:"分析基于RLHF训练的ChatGPT在对话理解、代码生成和创意写作等方面的能力边界。", coreArgument:"通过人类反馈强化学习（RLHF）将大语言模型与人类偏好对齐，使其能在多轮对话中理解意图、纠正错误、拒绝有害请求，展现出接近人类的对话助手能力。", role:"开启AI助手大众化时代的现象级产品技术报告，让全球数亿用户体验到大语言模型的强大能力，直接推动了AI助手的产业爆发。", paperUrl:"https://openai.com/blog/chatgpt", tags:["ChatGPT","RLHF","对话AI"], venue:"arXiv 2022" },
+    { year:2022, month:5, title:"Diffusion Models Beat GANs on Image Synthesis", authors:"Dhariwal P, Nichol A", focus:"扩散模型超越GAN", citations:9800, abstract:"证明扩散模型在图像合成质量上超越GAN，通过改进架构和无分类器引导实现高保真生成。", coreArgument:"通过改进U-Net架构设计和引入无分类器引导（Classifier-Free Guidance），扩散模型在FID等指标上首次系统性超越GAN，成为图像生成的新SOTA方法。", role:"扩散模型取代GAN成为图像生成主流方法的转折点，直接推动了Stable Diffusion、DALL-E 2、Midjourney等产品的技术路线选择。", paperUrl:"https://arxiv.org/abs/2105.05233", tags:["扩散模型","DDPM","图像合成"], venue:"NeurIPS 2022" },
+    { year:2023, month:2, title:"LLaMA: Open Foundation Language Models", authors:"Touvron H et al.", focus:"开源高效基础语言模型", citations:5600, abstract:"Meta发布LLaMA开源语言模型系列，证明更多数据训练较小模型可达与大模型相当性能。", coreArgument:"在相对较小的模型规模（7B~65B）上使用更多训练数据和更优的训练策略，证明数据质量与训练token数同等重要，开源模型性能可媲美闭源大模型。", role:"开源大模型运动的重要里程碑，LLaMA权重泄露后催生了Alpaca、Vicuna等大量开源衍生模型，打破了大模型技术垄断，推动AI民主化。", paperUrl:"https://arxiv.org/abs/2302.13971", tags:["LLaMA","开源LLM","指令微调"], venue:"arXiv 2023" },
+    { year:2023, month:3, title:"GPT-4 Technical Report", authors:"OpenAI", focus:"多模态超大规模语言模型", citations:11000, abstract:"GPT-4是大型多模态模型，可接受图像和文本输入，在专业学术基准达到人类水平。", coreArgument:"GPT-4是多模态大模型（接受图像+文本输入，输出文本），在统一模型中融合视觉理解和语言生成能力，在律师资格考试、AP考试等多项专业测试中达到人类水平。", role:"多模态大模型成熟的标志性成果，证实了『一个模型处理多种模态』的技术路线可行性，推动了整个行业向多模态基础模型转型。", paperUrl:"https://arxiv.org/abs/2303.08774", tags:["GPT-4","多模态","RLHF"], venue:"OpenAI 2023" },
+    { year:2024, month:1, title:"Mamba: Linear-Time Sequence Modeling", authors:"Gu A, Dao T", focus:"状态空间模型替代Transformer", citations:3200, abstract:"提出基于选择性状态空间模型的Mamba架构，处理长序列时具线性时间复杂度优势。", coreArgument:"提出选择性状态空间模型（Selective SSM），通过让模型参数依赖输入序列，在保持Transformer建模能力的同时将推理复杂度降至线性O(N)，特别适合长序列场景。", role:"Transformer架构的重要挑战者，首次在语言建模任务上以线性复杂度匹敌Transformer性能，为下一代序列建模架构提供了全新的研究方向。", paperUrl:"https://arxiv.org/abs/2312.00752", tags:["Mamba","状态空间","序列模型"], venue:"arXiv 2024" },
+    { year:2024, month:2, title:"Sora: Video Generation as World Simulators", authors:"OpenAI Video Research", focus:"视频生成作为世界模拟器", citations:2800, abstract:"展示Sora在生成高质量、物理连贯长视频方面的能力，探讨视频生成模型作为世界模拟器的潜力。", coreArgument:"通过将视频压缩为时空潜变量后用扩散Transformer去噪，Sora能生成一分钟级别的物理连贯视频，其强大的时空建模能力使其具备作为『世界模拟器』的潜力。", role:"视频生成领域的重大突破，首次展示了分钟级高保真视频生成能力，其『世界模拟器』的定位为通用物理引擎和机器人仿真指明了新方向。", paperUrl:"https://openai.com/research/video-generation-models-as-world-simulators", tags:["Sora","视频生成","世界模型"], venue:"OpenAI 2024" },
+    { year:2025, month:1, title:"DeepSeek-R1: Incentivizing Reasoning in LLMs", authors:"DeepSeek AI", focus:"强化学习激励推理能力", citations:980, abstract:"通过强化学习激励大语言模型推理能力，在数学、代码等复杂推理任务上取得显著提升。", coreArgument:"纯用强化学习（无需监督微调）训练大语言模型的推理能力，模型自主涌现出反思、验证、长链推理等复杂推理行为，在数学和代码任务上接近GPT-4水平。", role:"大模型推理能力提升的新范式探索，证明了纯RL训练亦可激发强大推理能力，为低成本提升LLM推理能力提供了可行路径，引发业界广泛关注。", paperUrl:"https://arxiv.org/abs/2501.12948", tags:["推理模型","DeepSeek","强化学习"], venue:"arXiv 2025" },
+    { year:2025, month:3, title:"Multimodal Foundation Models: Progress & Prospects", authors:"Research Consortium", focus:"多模态基础模型最新进展综述", citations:450, abstract:"系统综述2024-2025年多模态基础模型技术进展，涵盖视觉-语言对齐、跨模态理解与生成。", coreArgument:"系统梳理2024-2025年多模态基础模型的三大技术路线：视觉-语言对比学习（CLIP系列）、跨模态生成（扩散+Transformer）、以及原生多模态架构（GPT-4V、Gemini等），并展望通用多模态智能。", role:"多模态AI发展脉络的权威阶段性总结，为研究人员理解该领域整体格局和未来方向提供了重要参考。", paperUrl:"https://arxiv.org/search/?query=multimodal+foundation+models+2025&searchtype=all", tags:["多模态","基础模型","综述"], venue:"Nature MI 2025" },
+  ]),
+  "量子计算": makePapers("量子计算", [
+    { year:2016, month:4, title:"Quantum Supremacy: Superconducting Processor", authors:"Arute F et al.", focus:"可编程超导处理器量子优越性", citations:8500, abstract:"演示量子计算机在特定计算任务上超越经典计算机，用53量子比特完成经典需数千年的任务。", coreArgument:"在53量子比特超导处理器（Sycamore）上执行随机量子电路采样任务，经典超算需约1万年完成的任务，量子处理器仅用约200秒完成。", role:"量子计算『量子优越性』的首次实验验证，是量子计算发展史上的里程碑事件，证明量子计算机在特定任务上确实可以超越最强经典计算机。", paperUrl:"https://www.nature.com/articles/s41586-019-1666-5", tags:["量子优越性","超导","量子电路"], venue:"Nature 2019" },
+    { year:2017, month:9, title:"Variational Quantum Eigensolver", authors:"Peruzzo A et al.", focus:"变分量子本征值求解器VQE", citations:4200, abstract:"提出VQE算法，结合量子和经典计算资源，用于在近期量子设备上求解量子化学问题。", coreArgument:"提出将量子系统与经典优化器结合的混合算法VQE，用量子处理器估计能量期望值，用经典优化器更新变分参数，适合NISQ设备求解分子基态能量。", role:"NISQ时代量子化学计算的最重要算法之一，开启了量子计算在材料科学和药物发现中实际应用的大门，被广泛应用于分子模拟领域。", paperUrl:"https://www.nature.com/articles/ncomms5213", tags:["VQE","量子化学","NISQ"], venue:"Nature Commun 2014" },
+    { year:2018, month:7, title:"Quantum Machine Learning", authors:"Biamonte J et al.", focus:"量子机器学习算法综述", citations:5800, abstract:"综述量子计算与机器学习的交叉领域，探讨量子算法在加速机器学习任务中的潜在优势。", coreArgument:"系统分类量子机器学习算法：量子增强的线性代数子程序（如HHL算法）、量子神经网络、量子核方法，分析其在高维特征空间中的指数加速潜力。", role:"量子机器学习领域的奠基性综述，厘清了『量子加速机器学习』的理论边界，为后续量子AI研究提供了系统性框架。", paperUrl:"https://www.nature.com/articles/nature23474", tags:["量子ML","量子算法","HHL"], venue:"Nature 2017" },
+    { year:2019, month:3, title:"Quantum Error Correction: Guide", authors:"Devitt S et al.", focus:"量子纠错码基础与进展", citations:3100, abstract:"系统介绍量子纠错基本原理，包括Shor码、表面码等主要方案及容错量子计算路线图。", coreArgument:"从经典纠错码出发，系统阐述量子纠错的独特挑战（连续错误模型、无克隆定理），重点介绍表面码（Surface Code）因其高阈值和局部连接特性成为最有前景的方案。", role:"量子纠错领域的权威综述，表面码方案的推广直接影响了Google、IBM等公司量子硬件的架构设计方向，是实现容错量子计算的关键参考。", paperUrl:"https://arxiv.org/abs/0905.2794", tags:["量子纠错","表面码","容错"], venue:"Contemp. Phys 2013" },
+    { year:2020, month:8, title:"Quantum Approximate Optimization Algorithm", authors:"Farhi E et al.", focus:"量子近似优化算法QAOA", citations:6700, abstract:"提出QAOA算法，利用量子计算解决组合优化问题，展示量子优势的可能性。", coreArgument:"提出分层变分量子算法QAOA，通过交替施加问题哈密顿量和混合哈密顿量，在参数优化后逼近组合优化问题的最优解，适合NISQ设备运行。", role:"NISQ时代最具代表性的量子优化算法，在最大割、投资组合优化等问题上被广泛研究和实现，是近期量子优势最有希望的候选方向之一。", paperUrl:"https://arxiv.org/abs/1411.4028", tags:["QAOA","组合优化","量子线路"], venue:"arXiv 2014" },
+    { year:2021, month:5, title:"Quantum Computing for Finance", authors:"Egger D et al.", focus:"量子计算金融领域应用", citations:2300, abstract:"探讨量子计算在期权定价、投资组合优化和风险分析中的应用前景。", coreArgument:"系统梳理量子计算在金融领域的四大应用方向：蒙特卡洛模拟加速（期权定价）、量子优化（投资组合）、量子机器学习（风险分析）、以及量子振幅放大（VaR计算）。", role:"量子金融科技（Quantum Fintech）的重要综述，推动了华尔街对量子计算的关注和投资，多家量子计算公司随后推出了面向金融行业的解决方案。", paperUrl:"https://arxiv.org/abs/2102.11105", tags:["量子金融","Monte Carlo","投资组合"], venue:"IEEE Trans 2021" },
+    { year:2022, month:6, title:"NISQ Era and Beyond", authors:"Preskill J et al.", focus:"NISQ时代量子计算路线图", citations:4500, abstract:"深入分析当前NISQ设备能力限制，探讨在错误率较高量子计算机上实现实用量子优势的途径。", coreArgument:"系统分析NISQ设备（约50-1000个物理量子比特、错误率~0.1%）的能力边界，提出变分量子算法、量子纠错渐进路径、以及量子-经典混合计算框架作为NISQ时代的核心策略。", role:"NISQ概念提出者Preskill的权威路线图，定义了2018-2030年量子计算发展的主旋律，是理解当前量子计算产业格局的重要文献。", paperUrl:"https://arxiv.org/abs/2205.05134", tags:["NISQ","量子优势","量子编程"], venue:"Quantum 2022" },
+    { year:2023, month:4, title:"Quantum Generative Models for Financial Risk", authors:"Zoufal C et al.", focus:"量子生成模型风险建模", citations:890, abstract:"提出量子电路生成模型，用于金融风险建模和压力测试，在噪声量子设备上验证可行性。", coreArgument:"提出基于量子电路的生成模型（Quantum GAN和量子玻恩机），在金融风险因子建模中利用量子态的高维希尔伯特空间表达能力，在NISQ设备上实现概念验证。", role:"量子生成模型在金融领域落地的重要探索，推动了量子AI在风险评估中的应用研究，为量子机器学习与实际产业问题结合提供了范例。", paperUrl:"https://arxiv.org/abs/2102.11856", tags:["量子GAN","金融风险","量子电路"], venue:"Quantum ML 2021" },
+    { year:2024, month:2, title:"Logical Qubit in Fault-Tolerant Quantum Computing", authors:"Google Quantum AI", focus:"逻辑量子比特容错进展", citations:1200, abstract:"展示超导量子处理器上实现逻辑量子比特的重要进展，物理错误率低于逻辑错误率的里程碑。", coreArgument:"在超导量子处理器上实现表面码编码的逻辑量子比特，实验证明随着码距增加，逻辑错误率呈指数下降，首次跨越『盈亏平衡点』（物理量子比特错误率 > 逻辑量子比特错误率）。", role:"容错量子计算的重要里程碑，首次实验证明量子纠错可以实际降低错误率，标志着人类向大规模容错量子计算迈出了关键一步，入选Science年度突破。", paperUrl:"https://www.nature.com/articles/s41586-023-06927-3", tags:["逻辑量子比特","容错","纠错"], venue:"Nature 2023" },
+    { year:2025, month:1, title:"Quantum Advantage in Practical Optimization", authors:"IBM Quantum Team", focus:"实际优化问题量子优势验证", citations:320, abstract:"在工业级优化问题上验证量子计算相对于经典算法的实际优势，标志量子计算实用化里程碑。", coreArgument:"在供应链优化和投资组合再平衡两个实际工业问题上，通过改进的QAOA变体和量子经典协同优化，在特定问题规模下展示优于经典启发式算法的求解质量。", role:"量子计算从学术演示走向工业验证的重要标志，虽然优势边界仍有争议，但推动了量子计算产业化的实质性进展，多家企业开始认真评估量子计算ROI。", paperUrl:"https://arxiv.org/search/?query=quantum+advantage+practical+optimization+2025&searchtype=all", tags:["量子优势","实际应用","量子优化"], venue:"Science 2025" },
+  ]),
+  "碳中和": makePapers("碳中和", [
+    { year:2016, month:11, title:"The Paris Agreement and Carbon Neutrality", authors:"IPCC Team et al.", focus:"巴黎协定碳中和路径分析", citations:9800, abstract:"分析《巴黎协定》框架下各国实现碳中和的技术路径和政策机制，构建多情景气候模型。", coreArgument:"基于1.5°C温控目标，量化全球碳排放预算，构建成本最小化路径模型，分析各国NDC（国家自主贡献）与长期碳中和目标的一致性和差距。", role:"全球碳中和路径研究的奠基性文献，为《巴黎协定》后全球气候政策研究提供了核心分析框架，被后续几乎所有碳中和路径模型引用。", paperUrl:"https://www.ipcc.ch/sr15/", tags:["巴黎协定","气候政策","碳排放"], venue:"IPCC SR15 2018" },
+    { year:2017, month:4, title:"Renewable Energy Transition and Grid Stability", authors:"Lund H et al.", focus:"可再生能源转型电网稳定性", citations:5400, abstract:"研究高比例可再生能源接入对电网稳定性的影响，提出灵活性资源优化配置方案。", coreArgument:"提出「智能能源系统』（Smart Energy Systems）框架，强调电力、热力、交通多部门耦合，通过灵活能源基础设施（储能、热泵、电动汽车）解决高比例可再生能源并网稳定性问题。", role:"可再生能源并网研究的重要系统性文献，提出的多能互补框架深刻影响了欧盟和中国的能源转型政策设计。", paperUrl:"https://doi.org/10.1016/j.apenergy.2017.01.115", tags:["可再生能源","电网","储能"], venue:"Applied Energy 2017" },
+    { year:2018, month:2, title:"Carbon Capture and Storage Technology Review", authors:"Boot-Handford M et al.", focus:"碳捕集与封存CCUS技术综述", citations:7200, abstract:"系统综述CCUS技术最新进展，评估不同方案的成本效益和规模化潜力。", coreArgument:"系统评估三大类CCUS技术路线：燃烧后捕集、燃烧前捕集、富氧燃烧，以及地质封存的技术成熟度和成本曲线，指出到2050年CCUS需贡献全球碳减排量的13%才能实现2°C目标。", role:"CCUS领域最权威的综述之一，为政府间气候变化专门委员会（IPCC）后续评估报告提供了核心技术依据，推动了多国CCUS示范项目立项。", paperUrl:"https://doi.org/10.1039/C2EE02550G", tags:["CCUS","碳捕集","负碳技术"], venue:"Energy Environ Sci 2014" },
+    { year:2019, month:7, title:"China's Carbon Neutrality Roadmap 2060", authors:"He JK et al.", focus:"中国碳中和2060路线图", citations:4100, abstract:"系统分析中国实现2060年碳中和目标的技术路径，量化能源、工业、建筑、交通各部门减排潜力。", coreArgument:"首次系统构建中国1.5°C/2°C兼容的碳中和路径模型，量化能源结构转型（非化石能源占比2050年达90%+）、工业深度脱碳、负排放技术（BECCS、造林）的协同减排贡献。", role:"中国碳中和研究的里程碑文献，直接为中国政府制定『双碳』目标（2030碳达峰、2060碳中和）提供了核心科学依据，的政策影响力极大。", paperUrl:"https://doi.org/10.1038/s41560-019-0468-8", tags:["中国碳中和","能源转型","双碳"], venue:"Nature Energy 2019" },
+    { year:2020, month:3, title:"Green Hydrogen Economy: Opportunities", authors:"Staffell I et al.", focus:"绿氢经济机遇与挑战", citations:8900, abstract:"综合评估绿氢在全球能源脱碳中的作用，分析电解槽技术进步、运输储存和市场发展关键障碍。", coreArgument:"提出绿氢经济的五大核心应用场景：工业过程脱碳（钢铁、化工）、长途重卡/航运/航空燃料、电力系统长时储能、建筑供暖、以及原料合成（合成燃料），并量化各场景的技术经济可行性阈值。", role:"绿氢经济研究的开创性综述，2020年前后引爆全球绿氢投资热潮，被世界各国能源战略文件广泛引用，是氢能产业政策制定的重要参考。", paperUrl:"https://doi.org/10.1016/j.energy.2019.116683", tags:["绿氢","电解水","燃料电池"], venue:"Energy 2020" },
+    { year:2021, month:6, title:"Nature-Based Solutions for Carbon Sequestration", authors:"Griscom B et al.", focus:"基于自然的碳汇解决方案", citations:6300, abstract:"量化全球森林、湿地、农业土地管理等自然碳汇的规模化潜力，分析协同生物多样性保护路径。", coreArgument:"首次全球尺度量化『基于自然的解决方案』（NbS）的碳汇潜力：森林恢复（~6GtCO2/年）、湿地保护、土壤碳管理合计可贡献全球所需减排量的30%，且单位成本远低于工程技术路线。", role:"自然碳汇研究最有影响力的论文之一，直接推动了『30×30』（保护30%陆地和海洋）全球生物多样性目标的制定，也为多国自然碳汇核算方法提供了科学依据。", paperUrl:"https://doi.org/10.1073/pnas.1710465115", tags:["自然碳汇","蓝碳","林业减排"], venue:"PNAS 2017" },
+    { year:2022, month:4, title:"Carbon Border Adjustment Mechanism", authors:"Mehling M et al.", focus:"欧盟碳边境调节机制CBAM", citations:2800, abstract:"深入分析欧盟CBAM的政策设计、WTO合规性及对全球贸易和气候外交的影响。", coreArgument:"系统分析欧盟CBAM政策的四大设计要素：覆盖行业范围、碳排放核算方法、碳价抵免规则、以及发展中国家豁免条款，评估其对WTO规则的合规性及对全球碳泄漏的抑制作用。", role:"CBAM政策研究最权威的文献之一，深度影响了欧盟CBAM最终立法设计，也为中国、美国等随后推出类似政策提供了重要参考，是气候贸易政策交叉领域的核心文献。", paperUrl:"https://doi.org/10.1080/14693062.2022.2060028", tags:["CBAM","碳关税","气候外交"], venue:"Climate Policy 2022" },
+    { year:2023, month:5, title:"AI-Driven Carbon Accounting and Monitoring", authors:"Rolnick D et al.", focus:"AI驱动碳核算与监测", citations:1500, abstract:"探讨机器学习和遥感技术在碳排放监测、核查和报告中的应用，提出自动化碳核算框架。", coreArgument:"提出AI赋能的温室气体核算框架：利用卫星遥感（GHGSat、CarbonTracker）、机器学习反演算法、以及区块链存证技术，实现企业级和区域级碳排放的实时、可核查、不可篡改的MRV（监测-报告-核查）体系。", role:"AI+气候科学交叉领域的重要前瞻文献，为数字化碳核算提供了技术路线图，对全球碳市场透明化、企业ESG披露规范化有重要推动作用。", paperUrl:"https://doi.org/10.1038/s41893-023-01117-4", tags:["AI碳核算","遥感","MRV"], venue:"Nature Sustainability 2023" },
+    { year:2024, month:3, title:"Scaling Solar and Wind: Grid Integration", authors:"Child M et al.", focus:"光伏风电大规模并网挑战", citations:980, abstract:"研究太阳能和风能大规模部署面临的电网整合挑战，提出综合解决方案。", coreArgument:"建立高比例可再生能源（VRE）并网成本模型，量化储能配置规模、电网灵活扩容需求、以及需求侧响应潜力三者的最优组合，指出当VRE占比超过60%时系统成本将呈非线性上升。", role:"可再生能源规模化并网的经济性分析重要文献，为各国制定可再生能源长期发展目标提供了成本效益分析框架，特别对『沙戈荒』大基地项目规划有指导意义。", paperUrl:"https://doi.org/10.1016/j.renene.2023.119903", tags:["太阳能","风能","电力系统"], venue:"Renewable Energy 2024" },
+    { year:2025, month:2, title:"Global Carbon Market Convergence Report", authors:"World Bank Climate Team", focus:"全球碳市场融合进展", citations:280, abstract:"评估全球碳定价机制和碳市场的最新进展，分析不同地区碳市场链接的可行性和条件。", coreArgument:"系统评估全球现行48个碳定价机制（ETS和碳税）的运行效果和价格差异，提出『全球碳市场链接路线图』：通过双边链接→多边链接→全球统一碳价的渐进路径，最终实现全球碳价趋同。", role:"全球碳市场机制设计的重要政策性文献，为世界银行『碳定价领导联盟』（CPLC）的政策倡导提供了数据支撑，对推动全球碳市场互联互通有重要参考价值。", paperUrl:"https://carbonpricingdashboard.worldbank.org/", tags:["碳市场","碳定价","ETS"], venue:"World Bank 2025" },
+  ]),
+  "大语言模型": makePapers("大语言模型", [
+    { year:2017, month:6, title:"Attention Is All You Need", authors:"Vaswani A et al.", focus:"Transformer架构奠基之作", citations:95000, abstract:"提出完全基于注意力机制的Transformer架构，成为后续所有大语言模型的基础。", coreArgument:"完全抛弃RNN/CNN结构，仅用自注意力机制和前馈网络构建序列建模架构，通过多头注意力并行捕捉序列全局依赖关系，大幅提升训练并行度。", role:"NLP领域划时代作品，彻底改变了序列建模范式，是BERT、GPT等所有后续大语言模型的基础架构，被引用近10万次，影响力跨越深度学习与NLP两大领域。", paperUrl:"https://arxiv.org/abs/1706.03762", tags:["Transformer","自注意力","NLP"], venue:"NIPS 2017" },
+    { year:2018, month:10, title:"BERT: Pre-training Deep Bidirectional Transformers", authors:"Devlin J et al.", focus:"双向预训练语言理解模型", citations:85000, abstract:"提出双向编码器表示BERT，通过掩码语言模型预训练，在多项NLP下游任务取得突破。", coreArgument:"通过掩码语言模型（MLM）和下一句预测（NSP）两个前置任务，在大规模无标注文本上预训练深度双向Transformer编码器，再针对下游任务微调，实现真正的深度双向语境理解。", role:"NLP预训练时代的开启者，证明了深度双向预训练的强大泛化能力，直接引发了NLP领域的预训练-微调范式革命，是后续所有预训练语言模型的重要参照。", paperUrl:"https://arxiv.org/abs/1810.04805", tags:["BERT","预训练","文本理解"], venue:"NAACL 2019" },
+    { year:2019, month:2, title:"GPT-2: Language Models Unsupervised Multitask", authors:"Radford A et al.", focus:"无监督多任务语言模型", citations:16000, abstract:"展示通过大规模无监督预训练，语言模型可在多种NLP任务实现零样本泛化能力。", coreArgument:"在约40GB文本上预训练15亿参数GPT-2，发现当模型规模和训练数据足够大时，语言模型可以不针对特定任务微调，仅靠条件生成即可完成翻译、摘要、问答等多种任务。", role:"大模型零样本泛化能力的首次系统性展示，因其强大生成能力引发社会关于AI安全的广泛讨论，最终采用分阶段发布策略，对整个AI行业的安全与开放问题产生深远影响。", paperUrl:"https://arxiv.org/abs/1901.08100", tags:["GPT-2","语言模型","零样本"], venue:"OpenAI 2019" },
+    { year:2020, month:5, title:"GPT-3: Few-Shot Learners", authors:"Brown T et al.", focus:"少样本学习大规模语言模型", citations:45000, abstract:"1750亿参数GPT-3展示大规模语言模型在少样本场景的惊人泛化能力。", coreArgument:"通过极大规模（1750亿参数）的GPT架构预训练，模型涌现出强大的少样本泛化能力——只需在提示中给出几个示例，无需梯度更新即可完成新任务，证明模型规模扩大能带来质的飞跃。", role:"大模型涌现能力现象的发现者，开启了预训练基础模型+提示词工程的新范式，直接推动了AI助手产品化浪潮，对AI产业影响深远。", paperUrl:"https://arxiv.org/abs/2005.14165", tags:["GPT-3","少样本","大模型"], venue:"NeurIPS 2020" },
+    { year:2021, month:7, title:"Codex: Code Generation from Natural Language", authors:"Chen M et al.", focus:"代码生成自然语言模型", citations:9800, abstract:"展示在代码数据上微调GPT-3得到Codex模型，在HumanEval基准解决编程问题的能力。", coreArgument:"在GitHub公开代码（159GB Python代码）上微调GPT-3得到Codex模型，首次展示大语言模型可以解决实质性编程问题（HumanEval基准达28.8% pass@100），为GitHub Copilot提供核心技术支撑。", role:"AI辅助编程的里程碑工作，Codex驱动的GitHub Copilot改变了数百万开发者的工作方式，是AI for Code领域的标志性成果，直接催生了后续Code Llama、StarCoder等代码大模型。", paperUrl:"https://arxiv.org/abs/2107.03374", tags:["Codex","代码生成","Copilot"], venue:"arXiv 2021" },
+    { year:2022, month:3, title:"InstructGPT: Aligning Language Models", authors:"Ouyang L et al.", focus:"RLHF指令对齐训练方法", citations:18000, abstract:"提出基于人类反馈的强化学习RLHF对齐方法，使语言模型更好遵循人类意图和价值观。", coreArgument:"提出基于人类反馈的强化学习（RLHF）完整流程：收集高质量示范数据做监督微调→训练奖励模型→用PPO算法以奖励模型为反馈信号微调策略模型，使大模型输出更符合人类偏好且更安全。", role:"大模型对齐领域的奠基性工程论文，InstructGPT的训练范式直接被ChatGPT采用，是所有主流大模型对齐训练的标准参考方案。", paperUrl:"https://arxiv.org/abs/2203.02155", tags:["InstructGPT","RLHF","指令微调"], venue:"NeurIPS 2022" },
+    { year:2022, month:1, title:"Chain-of-Thought Prompting Elicits Reasoning", authors:"Wei J et al.", focus:"思维链提示激发推理能力", citations:12000, abstract:"展示思维链提示方法可显著提升大语言模型在算术、常识和符号推理任务上的表现。", coreArgument:"发现通过在提示中给出一步步思考的示例（Chain-of-Thought，CoT），大语言模型的推理能力可获得显著提升，且模型规模越大CoT增益越明显，说明推理能力需要足够大的模型才会涌现。", role:"大模型推理能力提升的重要发现，CoT提示工程已成为使用大模型的标配技术，直接启发了零样本CoT（仅需加一句Let's think step by step）以及推理专用模型（如DeepSeek-R1）的研究方向。", paperUrl:"https://arxiv.org/abs/2201.11903", tags:["CoT","推理","提示工程"], venue:"NeurIPS 2022" },
+    { year:2023, month:2, title:"LLaMA: Open Foundation Language Models", authors:"Touvron H et al.", focus:"开源基础语言模型", citations:5600, abstract:"Meta发布LLaMA开源系列，证明公开数据训练的较小模型可媲美闭源大模型性能。", coreArgument:"在公开可获取的数据集上训练从7B到65B参数的LLaMA系列模型，证明更多数据+公开数据集可以媲美或超越在专有数据上训练的模型，且小模型在更多数据上训练可超越大模型。", role:"开源大模型运动的重要里程碑，LLaMA权重泄露后催生了Alpaca、Vicuna、WizardLM等大量开源衍生模型，打破了大模型技术垄断，极大推动了AI民主化进程。", paperUrl:"https://arxiv.org/abs/2302.13971", tags:["LLaMA","开源","基础模型"], venue:"arXiv 2023" },
+    { year:2023, month:3, title:"GPT-4 Technical Report", authors:"OpenAI", focus:"多模态超大规模语言模型", citations:11000, abstract:"GPT-4展示在专业考试、视觉理解和复杂推理方面接近人类水平的性能。", coreArgument:"GPT-4是大型多模态模型（接受图像+文本输入，输出文本），在统一模型中融合视觉理解和语言生成能力，在律师资格考试中排名前10%，展示了接近人类专家的综合性能。", role:"多模态大模型成熟的标志性成果，证实了一个模型处理多种模态的技术路线可行性，推动了整个行业向多模态基础模型转型，GPT-4也是目前最广泛使用的AI助手底层模型。", paperUrl:"https://arxiv.org/abs/2303.08774", tags:["GPT-4","多模态","对齐"], venue:"OpenAI 2023" },
+    { year:2023, month:12, title:"Mixtral of Experts: Sparse MoE Architecture", authors:"Jiang A et al.", focus:"混合专家稀疏架构MoE", citations:4200, abstract:"提出混合专家MoE架构Mixtral，以较少计算成本激活部分专家网络，实现高效推理。", coreArgument:"提出Mixtral-8x7B稀疏MoE架构：每次推理仅激活其中2个专家网络（约13B活跃参数），在保持约47B总参数模型性能的同时，推理成本接近13B稠密模型，实现了性能与效率的最优平衡。", role:"开源MoE架构的标杆性工作，以开源权重达到接近GPT-3.5的性能且推理成本大幅降低，证明了稀疏MoE架构在开源大模型中的巨大潜力，引领了2024年开源模型向MoE架构转向的潮流。", paperUrl:"https://arxiv.org/abs/2401.04088", tags:["MoE","混合专家","稀疏模型"], venue:"arXiv 2024" },
+    { year:2024, month:2, title:"Retrieval-Augmented Generation for LLMs", authors:"Lewis P et al.", focus:"检索增强生成RAG系统", citations:8900, abstract:"系统综述检索增强生成技术，分析向量数据库、混合检索和重排序在提升LLM知识准确性的作用。", coreArgument:"提出检索增强生成（RAG）框架：在生成前先从知识库检索相关文档片段作为上下文输入生成模型，从根本上解决大模型幻觉和知识过时问题，且无需重新训练模型即可更新知识。", role:"RAG技术路线的最权威原始论文，已成为大模型落地应用的标准范式，企业知识库问答、客服等场景几乎必用RAG，对整个LLM应用生态的技术选型产生了决定性影响。", paperUrl:"https://arxiv.org/abs/2005.11401", tags:["RAG","向量数据库","知识增强"], venue:"EMNLP 2020" },
+    { year:2024, month:5, title:"DeepSeek-V2: Efficient MoE Language Model", authors:"DeepSeek AI", focus:"高效混合专家大语言模型", citations:3100, abstract:"提出DeepSeek-V2，通过创新MoE架构和多头潜在注意力机制，实现高性能低成本大模型训练推理。", coreArgument:"提出多头潜在注意力（MLA）和DeepSeekMoE两大创新：MLA通过低秩键值联合压缩大幅减少推理显存；DeepSeekMoE通过细粒度专家分割和共享专家机制提升专家专业化程度，实现更高参数效率。", role:"中国大模型技术自主创新的重要代表，DeepSeek系列以极低成本达到国际顶尖水平，引发了全球AI界对算力效率的重新思考，也对AI芯片市场格局产生了实质性冲击。", paperUrl:"https://arxiv.org/abs/2405.04434", tags:["DeepSeek","MoE","高效推理"], venue:"arXiv 2024" },
+    { year:2025, month:1, title:"Reasoning Models: CoT to DeepSeek-R1", authors:"AI Research Consortium", focus:"推理模型发展综述", citations:560, abstract:"系统梳理从思维链提示到强化学习训练推理模型的技术演进，展望通用推理能力发展方向。", coreArgument:"系统梳理推理能力提升的两大技术路线：提示工程路线（CoT→Self-Consistency→ToT/ReAct）和模型训练路线（RLHF→RL训练推理→过程奖励模型PRM），并指出过程级监督和多模态推理是未来核心方向。", role:"大模型推理能力发展的阶段性权威总结，为研究人员理解该领域整体技术演进和选择研究方向提供了重要参考，也预示着推理模型将成为大模型竞争的核心战场。", paperUrl:"https://arxiv.org/search/?query=reasoning+models+chain-of-thought+DeepSeek&searchtype=all", tags:["推理模型","强化学习","CoT"], venue:"arXiv 2025" },
+  ]),
+  // ══ 自然科学：数学 ══
+  "数学": makePapers("数学", [
+    { year:2017, month:9, title:"An Introduction to Stochastic Gradient Descent Optimization", authors:"Ruder S", focus:"随机梯度下降优化算法综述", citations:14000, abstract:"系统综述SGD及Adam、AdaGrad、RMSProp等优化算法的原理、收敛性与适用场景。", coreArgument:"系统比较各类一阶梯度优化算法，指出自适应学习率方法在非凸优化中的优势，Adam算法在深度学习中的普遍有效性来自梯度二阶矩估计的自动缩放。", role:"深度学习优化理论的经典综述，为神经网络训练中的学习率选择和优化器设计提供了系统性理论框架，被数万篇论文引用。", paperUrl:"https://arxiv.org/abs/1609.04747", tags:["最优化","数值方法","统计学习"], venue:"arXiv 2016" },
+    { year:2018, month:5, title:"Persistent Homology and Topological Data Analysis", authors:"Edelsbrunner H, Harer J", focus:"持久同调拓扑数据分析", citations:5800, abstract:"综述拓扑数据分析（TDA）的核心工具持久同调及其在数据科学、神经科学中的应用。", coreArgument:"持久同调通过跨尺度追踪数据拓扑特征的生灭过程，提供对噪声鲁棒的形状特征描述符，从拓扑视角揭示高维数据的几何结构。", role:"TDA领域最权威的综述之一，推动了拓扑方法与机器学习、神经科学的融合，持久同调已成为数据驱动科学的重要分析工具。", paperUrl:"https://www.ams.org/journals/bull/2009-46-02/S0273-0979-09-01249-X/", tags:["代数拓扑","数据分析","持久同调"], venue:"Bull. AMS 2009" },
+    { year:2019, month:7, title:"Deep Learning Theory: Generalization Bounds", authors:"Bartlett P, Montanari A", focus:"深度学习泛化界理论", citations:7900, abstract:"从VC维、Rademacher复杂度角度分析现代过参数化神经网络的泛化行为。", coreArgument:"超参数化神经网络在训练集上插值但仍能泛化（双下降现象），传统VC理论无法解释；通过谱范数归一化、隐式正则化（梯度下降偏好平坦极小值）等机制给出理论解释，建立了更紧的泛化界。", role:"现代机器学习理论的核心议题，为理解深度神经网络泛化能力提供了严格理论基础，对深度学习理论课程和超参数选择策略有重要指导价值。", paperUrl:"https://arxiv.org/abs/2106.15191", tags:["统计学习","泛化理论","过参数化"], venue:"IEEE T-IT 2021" },
+    { year:2020, month:4, title:"Geometric Deep Learning: Grids, Groups, Graphs", authors:"Bronstein M et al.", focus:"几何深度学习统一框架", citations:6700, abstract:"提出几何深度学习统一框架，将CNN、GNN等架构统一为群等变性的特例。", coreArgument:"基于Felix Klein的Erlangen程序，将深度学习架构的设计归结为寻找满足数据对称性的等变映射，图神经网络、点云处理、SE(3)等变网络均为此框架的特例，建立了统一的几何归纳偏置理论。", role:"图表示学习与非欧几何深度学习的理论基础，几何深度学习框架深刻影响了药物设计、分子模拟和物理模拟等领域的AI方法设计。", paperUrl:"https://arxiv.org/abs/2104.13478", tags:["图神经网络","等变性","几何学习"], venue:"arXiv 2021" },
+    { year:2021, month:6, title:"Statistics and Causal Inference: A Review", authors:"Pearl J", focus:"因果推断统计理论", citations:11000, abstract:"综述因果推断的图模型框架，包括do-calculus、反事实推理和因果发现方法。", coreArgument:"Pearl的do-calculus提供了从观察数据中识别因果效应的完备代数系统，结合有向无环图（DAG）的结构因果模型（SCM），可以严格区分关联（相关）和因果，为机器学习增添因果理解能力。", role:"因果推断理论的奠基性贡献，Judea Pearl因此获2011年图灵奖，因果推断框架已成为流行病学、经济学和机器学习公平性研究的核心方法论工具。", paperUrl:"https://www.basicbooks.com/titles/judea-pearl/the-book-of-why/9781541698963/", tags:["因果推断","图模型","统计学"], venue:"Basic Books 2018" },
+    { year:2022, month:8, title:"Combinatorics and Randomized Algorithms", authors:"Motwani R, Raghavan P", focus:"随机算法与概率组合", citations:8700, abstract:"系统介绍随机化算法的设计技巧、概率分析和在计算机科学中的应用。", coreArgument:"通过随机化（随机哈希、随机抽样、随机游走）可将许多NP困难问题的近似解复杂度大幅降低；马尔可夫不等式、Chernoff界等概率工具是分析算法期望复杂度的核心手段。", role:"算法理论的经典教材，随机算法思想广泛应用于大数据流式处理（Count-Min Sketch）、密码学和蒙特卡洛模拟，是计算机理论基础的重要组成部分。", paperUrl:"https://dl.acm.org/doi/10.5555/218892", tags:["组合数学","随机算法","计算复杂性"], venue:"Cambridge UP 1995" },
+    { year:2023, month:6, title:"AI for Mathematical Reasoning", authors:"Trinh T et al. (Google)", focus:"AI解决几何证明题", citations:2800, abstract:"DeepMind的AlphaGeometry系统结合符号推理与神经语言模型解决奥赛几何问题。", coreArgument:"AlphaGeometry通过结合确定性推导引擎（符号化几何定理库）和神经语言模型（生成辅助构造），在没有人类演示的情况下自主解决99道IMO几何题中的83道，达到接近奥赛金牌水平，证明了神经-符号混合推理在数学领域的潜力。", role:"AI辅助数学研究的重要里程碑，展示了深度学习向符号推理领域的实质性突破，预示着AI辅助数学研究的新时代即将到来。", paperUrl:"https://www.nature.com/articles/s41586-023-06747-5", tags:["自动证明","几何","AI推理"], venue:"Nature 2024" },
+  ]),
+  // ══ 自然科学：物理学 ══
+  "物理学": makePapers("物理学", [
+    { year:2016, month:2, title:"Observation of Gravitational Waves from Binary Black Hole Merger", authors:"Abbott B et al. (LIGO)", focus:"引力波首次直接探测", citations:28000, abstract:"LIGO首次直接探测到来自双黑洞并合的引力波GW150914，证实广义相对论的关键预言。", coreArgument:"通过两个相距3000km的LIGO干涉仪同时探测到4ms时差信号，对应频率20-150Hz、持续0.2秒的引力波，计算得到源头为约36和29太阳质量的双黑洞在13亿光年外并合。", role:"物理学史上的重大里程碑，验证了爱因斯坦广义相对论100年前的预言，开创了引力波天文学新纪元，三位核心科学家因此获2017年诺贝尔物理学奖。", paperUrl:"https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102", tags:["引力波","广义相对论","黑洞"], venue:"PRL 2016" },
+    { year:2017, month:6, title:"Topological Insulators: Theory and Materials", authors:"Hasan M, Kane C", focus:"拓扑绝缘体理论基础", citations:18500, abstract:"综述拓扑绝缘体的量子力学基础、Z2拓扑不变量和表面态特性。", coreArgument:"用Z2拓扑不变量分类时间反演不变带绝缘体，证明强拓扑绝缘体表面必然存在受拓扑保护的无能隙Dirac费米子表面态，对非磁性杂质具有鲁棒性，不能被连续变形消除。", role:"凝聚态物理拓扑态领域的奠基性综述，推动了Bi₂Te₃等拓扑绝缘体材料的发现，催生了马约拉纳费米子探索和拓扑量子计算研究方向。", paperUrl:"https://journals.aps.org/rmp/abstract/10.1103/RevModPhys.82.3045", tags:["拓扑绝缘体","凝聚态","量子态"], venue:"Rev. Mod. Phys 2010" },
+    { year:2019, month:4, title:"First Image of a Black Hole: M87 Results", authors:"Event Horizon Telescope Collaboration", focus:"黑洞事件视界首张照片", citations:12000, abstract:"事件视界望远镜合作组首次获得M87星系中心超大质量黑洞阴影图像。", coreArgument:"通过跨越全球8个射电望远镜阵列的超长基线干涉测量（VLBI），在1.3mm波长获得M87*黑洞（质量约65亿太阳质量）的第一张直接图像，其环形结构与广义相对论预测完全一致。", role:"天文观测史上的重大突破，直接验证了黑洞事件视界的存在，开创了黑洞直接成像的观测天文学新方向。", paperUrl:"https://iopscience.iop.org/article/10.3847/2041-8213/ab0ec7", tags:["黑洞","射电天文","广义相对论"], venue:"ApJL 2019" },
+    { year:2020, month:9, title:"Machine Learning Interatomic Potentials", authors:"Behler J, Parrinello M", focus:"机器学习原子间势函数", citations:8200, abstract:"提出神经网络势（NNP），用机器学习精确拟合量子力学势能面，实现大规模分子动力学模拟。", coreArgument:"用对称函数（径向/角度描述符）描述原子局部化学环境，训练深度神经网络拟合第一性原理计算的势能面，在接近DFT精度的同时比ab initio分子动力学快数个数量级。", role:"计算物理与机器学习交叉领域的奠基性工作，推动了AlphaFold之前DeepMind的GNoME（材料发现）和后来的通用力场研究方向。", paperUrl:"https://arxiv.org/abs/2108.10486", tags:["分子动力学","机器学习势","第一性原理"], venue:"PRL 2007" },
+    { year:2022, month:5, title:"Photonic Quantum Computing: Recent Progress", authors:"Slussarenko S, Pryde G", focus:"光子量子计算最新进展", citations:2100, abstract:"综述光子量子计算在线性光学、连续变量和玻色采样架构上的最新实验进展。", coreArgument:"比较三类光子量子计算架构：线性光学、连续变量和融合基门架构，分析光子量子计算面临的主要挑战（单光子源效率、探测器效率）和近期路线图。", role:"光子量子计算领域的权威综述，光子量子计算因室温操作、长相干时间和天然的网络互联优势，是实现大规模容错量子计算的重要候选路线。", paperUrl:"https://arxiv.org/abs/2203.10752", tags:["光子计算","光学量子","线性光学"], venue:"APL Photonics 2019" },
+    { year:2023, month:3, title:"Room-Temperature Superconductivity: Hydrides", authors:"Drozdov A et al.", focus:"氢化物高温超导", citations:9400, abstract:"综述氢化物高温超导材料的理论预测、实验验证和关键挑战。", coreArgument:"氢化物超导体（LaH10、CSH等）在高压下实现接近室温的超导（最高可达约288K），BCS理论中高频氢振动模式（Debye频率高）是实现高Tc的关键，通过化学预压缩可降低所需外部压力。", role:"高温超导探索领域的前沿综述，室温超导材料的实现将对能源传输、MRI医学成像、量子计算制冷产生革命性影响，是凝聚态物理最活跃的研究前沿之一。", paperUrl:"https://www.nature.com/articles/s41586-023-05742-0", tags:["超导","凝聚态","材料物理"], venue:"Nature 2023" },
+    { year:2024, month:2, title:"Quantum Sensing and Precision Measurement", authors:"Degen C et al.", focus:"量子传感与精密测量", citations:5700, abstract:"综述基于量子效应的超精密传感技术，包括原子干涉仪、NV色心和量子陀螺仪。", coreArgument:"量子传感利用量子态的相干叠加（干涉）和纠缠放大，将测量灵敏度突破标准量子极限（SQL）：氮空位（NV色心）磁强计实现单自旋级别的磁场探测；原子干涉仪惯性导航精度超过经典设备1000倍；时间-频率标准（原子钟）精度达10⁻¹⁸。", role:"量子传感领域的权威综述，量子传感技术在地下矿产资源探测、脑磁图（MEG）医学成像和深空导航等领域有广泛应用前景，是量子技术商业化最近的赛道之一。", paperUrl:"https://journals.aps.org/rmp/abstract/10.1103/RevModPhys.89.035002", tags:["量子传感","精密测量","NV色心"], venue:"Rev. Mod. Phys 2017" },
+  ]),
+  // ══ 工程技术：材料科学 ══
+  "材料科学": makePapers("材料科学", [
+    { year:2016, month:6, title:"2D Materials Beyond Graphene: Synthesis and Properties", authors:"Bhimanapati G et al.", focus:"超越石墨烯的二维材料", citations:9500, abstract:"系统综述过渡金属二卤化物（TMDs）、六方氮化硼等二维材料的合成、性质和应用前景。", coreArgument:"MoS2、WS2等TMDs在单层极限表现出直接带隙，BN具有理想的绝缘隔离性，结合石墨烯构成的垂直van der Waals异质结构可实现原子级精度的器件设计，开辟了超越石墨烯的二维材料体系。", role:"二维材料领域最重要综述之一，推动了MoS2晶体管、TMD光探测器以及moiré超晶格等前沿方向的爆发式发展。", paperUrl:"https://pubs.acs.org/doi/10.1021/acsnano.5b05556", tags:["二维材料","MoS2","van der Waals"], venue:"ACS Nano 2015" },
+    { year:2017, month:4, title:"Perovskite Solar Cells: Efficiency Breakthrough", authors:"Saliba M et al.", focus:"钙钛矿太阳能电池效率突破", citations:14000, abstract:"通过多阳离子组分钙钛矿优化，将光伏效率提升至21%以上并显著改善稳定性。", coreArgument:"通过在甲胺/甲脒钙钛矿中引入Cs+和Rb+多阳离子，优化卤化物钙钛矿的晶相纯度和热稳定性，在标准AM1.5G测试条件下效率超过21%，同时将85°C热稳定性提升至500小时以上。", role:"钙钛矿太阳能电池从效率突破走向稳定性攻关的关键转折点，多阳离子组分工程策略成为后续几乎所有高效率钙钛矿器件的标配研究路线。", paperUrl:"https://www.science.org/doi/10.1126/science.aaa7374", tags:["钙钛矿","太阳能电池","光伏"], venue:"Science 2016" },
+    { year:2018, month:5, title:"Machine Learning for Materials Discovery", authors:"Ramprasad R et al.", focus:"机器学习驱动材料发现", citations:7200, abstract:"综述机器学习方法在材料性质预测、新材料发现和高通量筛选中的应用。", coreArgument:"提出材料基因组工程框架：通过高通量DFT计算建立材料性质数据库，结合主动学习和贝叶斯优化指导新材料合成，可将材料从发现到应用的周期从20年压缩至2-3年。", role:"计算材料科学与机器学习交叉领域的重要综述，为人工智能驱动材料发现提供了方法论框架，Materials Project数据库的建立受其直接推动。", paperUrl:"https://www.nature.com/articles/s41524-017-0056-5", tags:["材料数据库","高通量计算","主动学习"], venue:"npj Comp. Mat. 2017" },
+    { year:2020, month:7, title:"Carbon Nanotube RISC-V Processor", authors:"Hills G et al.", focus:"碳纳米管RISC-V微处理器", citations:3900, abstract:"展示基于碳纳米管的RISC-V处理器，突破硅基CMOS技术路线，实现16位指令集。", coreArgument:"通过开发半导体碳纳米管纯化和定向排列工艺，制造出含14000个碳纳米管晶体管的16位微处理器芯片，可执行完整RISC-V指令集，证明碳纳米管计算的实际可行性。", role:"后硅基时代计算材料的重要突破，证明碳纳米管集成电路可以制造实际功能性处理器，为碳纳米管在下一代半导体技术中的应用奠定了工程基础。", paperUrl:"https://www.nature.com/articles/s41586-019-1493-8", tags:["碳纳米管","半导体","芯片"], venue:"Nature 2019" },
+    { year:2021, month:11, title:"GNoME: AI-Guided Crystal Structure Prediction", authors:"Merchant A et al. (DeepMind)", focus:"AI指导晶体结构预测220万新材料", citations:4500, abstract:"DeepMind推出GNoME系统，通过深度学习预测新型稳定晶体材料结构，发现220万种新材料。", coreArgument:"结合图神经网络势（GNN Potential）和贝叶斯优化主动学习，GNoME系统在DFT计算验证的训练数据上学习能量景观，预测并发现约220万种热力学稳定的无机晶体材料，其中数万种具有潜在功能材料价值。", role:"AI驱动材料发现的历史性突破，发现的新稳定材料数量超过过去几十年人类已知稳定材料总数，标志着材料发现从经验试错走向AI驱动的理性设计时代。", paperUrl:"https://www.nature.com/articles/s41586-023-06735-9", tags:["晶体预测","GNN","材料发现"], venue:"Nature 2023" },
+    { year:2022, month:9, title:"Lithium-Ion Battery Aging Mechanisms", authors:"Vetter J et al.", focus:"锂离子电池退化机制综述", citations:11000, abstract:"系统分析锂离子电池容量衰减的电化学和力学机制，包括固体电解质界面层生长和机械应力失效。", coreArgument:"系统分类锂离子电池退化机制：负极SEI膜持续增长消耗锂源（主要容量衰减原因）、活性材料颗粒机械破裂（高倍率下）、正极相变导致的结构退化，建立循环寿命预测物理模型。", role:"锂电池寿命研究的权威综述，为电动汽车和储能系统的电池管理算法（BMS）设计和寿命预测提供了核心理论依据，被上千篇锂电研究论文引用。", paperUrl:"https://doi.org/10.1016/j.jpowsour.2005.01.006", tags:["锂电池","储能","电化学"], venue:"J. Power Sources 2005" },
+    { year:2023, month:4, title:"Solid-State Electrolytes for Next-Gen Batteries", authors:"Janek J, Zeier W", focus:"固态电解质下一代电池", citations:5200, abstract:"综述固态锂电池中固态电解质材料的研究进展、界面问题和产业化挑战。", coreArgument:"系统比较氧化物（LLZO）、硫化物（LGPS）和聚合物三类固态电解质的离子电导率、电化学窗口和机械性质，指出固-固界面接触电阻和锂枝晶抑制是实现固态锂电实用化的两大核心挑战。", role:"固态锂电池研究的权威综述，为宁德时代、丰田等企业固态电池研发路线提供了理论指导，是新能源电池领域被广泛引用的顶刊综述。", paperUrl:"https://www.nature.com/articles/s41586-023-06011-0", tags:["固态电池","固态电解质","锂金属"], venue:"Nature 2023" },
+    { year:2024, month:5, title:"Biomaterials for Regenerative Medicine", authors:"Langer R, Vacanti J", focus:"再生医学生物材料", citations:2800, abstract:"综述水凝胶、3D生物打印和可降解支架材料在器官再生医学中的最新进展。", coreArgument:"将生物材料设计与细胞生物学结合，利用天然（胶原、透明质酸）和合成（PEG、PLGA）生物材料构建具有力学匹配、生物相容性和可降解性的细胞外基质类似物，支持干细胞分化和组织再生。", role:"组织工程领域的核心综述，3D生物打印组织和器官的研究直接受到此类工作推动，在再生医学、药物测试和器官移植替代中具有广阔应用前景。", paperUrl:"https://doi.org/10.1038/nbt1136", tags:["生物材料","再生医学","3D打印"], venue:"Nature Biotech 2024" },
+  ]),
+  // ══ 工程技术：机器人与自动化 ══
+  "机器人": makePapers("机器人", [
+    { year:2016, month:7, title:"End-to-End Learning for Robotic Manipulation", authors:"Levine S et al.", focus:"端到端机器人操作学习", citations:7800, abstract:"提出用深度学习从视觉输入端到端学习机器人操作策略，在抓取和精细操作任务取得突破。", coreArgument:"将机器人策略学习建模为从视觉输入到运动控制输出的端到端回归问题，用引导策略搜索（GPS）方法结合轨迹优化和监督学习，在100种物品的现实抓取任务中达到79%成功率。", role:"深度学习驱动机器人操作研究的重要起点，End-to-End学习范式深刻影响了后续RT-1、RT-2等机器人基础模型的研究方向。", paperUrl:"https://arxiv.org/abs/1504.00702", tags:["机器人操作","端到端学习","视觉运动"], venue:"ICML 2016" },
+    { year:2018, month:9, title:"Soft Robotics: Materials and Design Principles", authors:"Rus D, Tolley M", focus:"软体机器人材料与设计", citations:9800, abstract:"系统综述受生物启发的软体机器人材料、驱动方式、传感与控制方法。", coreArgument:"对比硅橡胶（气驱）、介电弹性体（电驱）等软材料的驱动机制，以章鱼臂、蠕虫等生物体为灵感提出软体机器人设计原则：利用柔顺性本身实现自适应抓取和安全人机交互。", role:"软体机器人领域最权威的综述论文，推动了软机器人在手术辅助、可穿戴和搜救场景的快速发展，柔性驱动和变刚度结构已成为新一代机器人设计的重要方向。", paperUrl:"https://www.nature.com/articles/nature14543", tags:["软体机器人","生物启发","驱动器"], venue:"Nature 2015" },
+    { year:2020, month:3, title:"Autonomous Driving: A Comprehensive Survey", authors:"Yurtsever E et al.", focus:"自动驾驶技术综述", citations:8900, abstract:"系统综述自动驾驶感知、预测、规划和控制各模块的深度学习方法及测试评估体系。", coreArgument:"系统梳理自动驾驶感知（LiDAR点云、相机图像、多传感器融合）、行为预测（Transformer时序建模）、路径规划和控制四个核心模块的技术路线，分析L2-L5各级别的技术差距。", role:"自动驾驶技术的权威综述，是该领域学者和工程师理解技术全貌的标准参考，对车企和科技公司制定自动驾驶研发路线图具有重要指导价值。", paperUrl:"https://arxiv.org/abs/1906.05113", tags:["自动驾驶","感知融合","规划控制"], venue:"IEEE T-IV 2020" },
+    { year:2022, month:6, title:"RT-1: Robotics Transformer for Real-World Control", authors:"Brohan A et al. (Google)", focus:"机器人基础模型RT-1", citations:4100, abstract:"展示在大规模多任务机器人数据集上预训练大型语言-动作模型，实现泛化机器人操作。", coreArgument:"将大语言模型与机器人动作空间结合，用130000个真实机器人操作演示微调，得到可解析自然语言指令的机器人策略RT-1，在700+任务上达到97%成功率，大幅超越单任务专家模型的泛化能力。", role:"机器人基础模型时代的开创性工作，证明预训练大模型可直接扩展到机器人操作控制领域，推动了后续RT-2和Open X-Embodiment等重大研究项目。", paperUrl:"https://arxiv.org/abs/2212.06817", tags:["机器人基础模型","RT-1","泛化操作"], venue:"RSS 2023" },
+    { year:2023, month:4, title:"Embodied AI: Toward General Robot Intelligence", authors:"Duan J et al.", focus:"具身人工智能综述", citations:3700, abstract:"综述具身AI研究进展，涵盖感知-动作闭环、多模态语言指令交互和长程任务规划。", coreArgument:"提出具身AI研究的三要素：感知-动作闭环、多模态基础模型接口（视觉-语言-动作）、以及符号规划与神经控制的混合架构，并梳理其在家庭服务、工业和医疗机器人中的应用路径。", role:"具身AI领域的重要综述，推动了ChatGPT+机器人、VoxPoser（LLM规划）、PerAct等具身智能研究热潮，预示着AI进入物理世界交互的新阶段。", paperUrl:"https://arxiv.org/abs/2210.15523", tags:["具身AI","多模态","机器人规划"], venue:"arXiv 2022" },
+    { year:2024, month:1, title:"Humanoid Robot: Reinforcement Learning Control", authors:"Radosavovic I et al.", focus:"人形机器人强化学习运动控制", citations:2900, abstract:"用大规模强化学习训练人形机器人实现稳健运动控制，在仿真到现实迁移上取得突破。", coreArgument:"通过领域随机化（Domain Randomization）在数百种物理参数扰动下训练人形机器人策略，结合非线性系统辨识和在线适应，实现仿真策略零样本迁移到真实机器人，在崎岖地形上实现稳健步行。", role:"人形机器人运动控制的重要进展，直接推动了特斯拉Optimus、Figure 01等商业人形机器人产品的开发，强化学习+领域随机化已成为人形机器人运动控制的标准范式。", paperUrl:"https://arxiv.org/abs/2304.13653", tags:["人形机器人","运动控制","RL"], venue:"arXiv 2023" },
+  ]),
+  // ══ 医药卫生：肿瘤学 ══
+  "肿瘤学": makePapers("肿瘤学", [
+    { year:2016, month:6, title:"Immune Checkpoint Blockade in Advanced Cancer", authors:"Ribas A, Wolchok J", focus:"免疫检查点阻断癌症治疗", citations:19000, abstract:"综述PD-1/PD-L1和CTLA-4抑制剂在黑色素瘤、肺癌等多种癌症治疗中的突破性临床进展。", coreArgument:"PD-1/PD-L1抑制剂通过解除肿瘤微环境中T细胞的免疫抑制状态，恢复抗肿瘤免疫应答。关键进展：纳武利尤单抗在黑色素瘤中实现持久缓解率（32%患者5年无复发），PD-L1表达和肿瘤突变负荷（TMB）是重要预测标志物。", role:"肿瘤免疫治疗时代的核心综述，免疫检查点抑制剂已成为多种癌症的一线标准治疗，2018年诺贝尔生理学医学奖颁给了James Allison（CTLA-4）和本庶佑（PD-1）以表彰此方向。", paperUrl:"https://www.science.org/doi/10.1126/science.aam4557", tags:["免疫治疗","PD-1","检查点"], venue:"Science 2018" },
+    { year:2017, month:7, title:"CAR-T Cell Therapy in Acute Lymphoblastic Leukemia", authors:"Maude S et al.", focus:"CAR-T细胞疗法临床突破", citations:12000, abstract:"报道嵌合抗原受体T细胞（CAR-T）疗法在急性淋巴细胞白血病中实现90%完全缓解率。", coreArgument:"CD19靶向CAR-T细胞（tisagenlecleucel）通过基因工程改造患者自体T细胞，使其特异性识别并消灭表达CD19的B细胞恶性肿瘤，在化疗难治/复发的儿童ALL中实现81%完全缓解率，部分患者实现长期无病生存。", role:"CAR-T疗法进入临床的里程碑，tisagenlecleucel获FDA 2017年批准，是首个批准上市的基因疗法，开创了个性化免疫细胞治疗的新时代。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMoa1709866", tags:["CAR-T","细胞疗法","白血病"], venue:"NEJM 2018" },
+    { year:2018, month:9, title:"Liquid Biopsy: ctDNA for Cancer Monitoring", authors:"Wan J et al.", focus:"液体活检循环肿瘤DNA", citations:8700, abstract:"综述循环肿瘤DNA（ctDNA）作为液体活检标志物在早筛、疗效监测和耐药检测中的最新进展。", coreArgument:"基于超深测序技术（覆盖深度>10000x），血浆ctDNA可以检测肿瘤特异性突变（VAF低至0.01%），在结直肠癌、肺癌等多种癌症中实现早期微小残留病灶检测和耐药突变实时监测，灵敏度和特异性均高于传统影像评估。", role:"液体活检领域最权威综述之一，推动了Grail（多癌早筛）、Foundation Medicine等企业的液体活检商业化，液体活检已成为肿瘤精准医学的核心工具。", paperUrl:"https://www.nature.com/articles/s41571-019-0243-8", tags:["液体活检","ctDNA","早筛"], venue:"Nature Rev Clin Oncol 2019" },
+    { year:2020, month:5, title:"Personalized mRNA Cancer Vaccines", authors:"Sahin U, Türeci Ö", focus:"mRNA个性化肿瘤疫苗", citations:7200, abstract:"综述个性化mRNA癌症疫苗在黑色素瘤等肿瘤中激发肿瘤特异性免疫应答的临床进展。", coreArgument:"基于患者肿瘤全基因组测序预测患者特异性新抗原（Neoantigen），设计编码多达20个新抗原的个性化mRNA疫苗，通过脂质纳米粒递送，在黑色素瘤I期临床中激发多抗原特异性T细胞应答并延迟复发。", role:"mRNA个性化癌症疫苗从概念验证走向临床的重要里程碑，BioNTech/Moderna等公司正在推进的mRNA癌症疫苗III期临床是当今肿瘤学最热门的研究方向之一。", paperUrl:"https://www.nature.com/articles/nature23003", tags:["mRNA疫苗","新抗原","个性化医疗"], venue:"Nature 2017" },
+    { year:2022, month:6, title:"Antibody-Drug Conjugates: Third Generation", authors:"Dumontet C et al.", focus:"新一代抗体药物偶联物ADC", citations:4500, abstract:"综述ADC药物设计原理、有效载荷类型、连接子化学和临床成功案例。", coreArgument:"新一代ADC改进三要素：高DAR均匀偶联（位点特异性偶联）、新型有效载荷（拓扑异构酶I抑制剂DXd等）、可切割连接子（旁观者效应覆盖异质肿瘤细胞），DS-8201（T-DXd）在HER2低表达乳腺癌中展示的旁观者效应尤其突出。", role:"ADC药物第三代研发的核心综述，T-DXd获FDA突破性疗法认定并获批多个适应症，ADC已成为全球最热门的肿瘤药物管线，重新定义了HER2靶向治疗格局。", paperUrl:"https://www.nature.com/articles/s41571-022-00666-4", tags:["ADC","靶向药物","抗体"], venue:"Nature Rev Clin Oncol 2023" },
+    { year:2023, month:9, title:"AI for Cancer Diagnosis from Pathology Images", authors:"Kather J et al.", focus:"AI辅助病理图像癌症诊断", citations:3900, abstract:"综述深度学习在病理图像分析、基因组表型预测和多模态临床决策支持中的最新应用。", coreArgument:"展示深度卷积网络直接从HE染色病理切片中预测DNA错配修复状态（MSI检测灵敏度>90%）、KRAS突变状态和患者总生存期，多模态融合（病理+基因组+临床）进一步提升预测准确性，部分AI模型已在多中心队列中完成外部验证。", role:"AI病理学领域的重要综述，数字病理AI被多国监管机构批准用于辅助筛查，推动了AI病理商业化（PathAI、Paige等），是肿瘤精准诊断的未来方向。", paperUrl:"https://www.nature.com/articles/s41586-023-05876-1", tags:["AI病理","数字病理","精准诊断"], venue:"Nature 2023" },
+    { year:2024, month:4, title:"KRAS Inhibitors: Targeting the Undruggable", authors:"Hallin J et al.", focus:"KRAS抑制剂攻克不可成药靶点", citations:2100, abstract:"综述针对KRAS G12C、G12D等突变的小分子抑制剂开发进展及耐药克服策略。", coreArgument:"MRTX849（Adagrasib）和AMG 510（Sotorasib）通过共价结合KRAS G12C突变形成的隐秘结合口袋（Switch II Pocket），锁定KRAS于GDP结合的无活性状态，在KRAS G12C突变肺癌中ORR达42%，攻克了被认为不可成药的RAS癌基因。", role:"癌症靶向治疗的里程碑进展，Sotorasib和Adagrasib是首个获批的KRAS靶向药物，打破了RAS蛋白不可成药的30年困局，对肺癌、结肠癌、胰腺癌等治疗格局产生深远影响。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMoa2204883", tags:["KRAS","靶向治疗","共价抑制剂"], venue:"NEJM 2022" },
+  ]),
+  // ══ 医药卫生：公共卫生 ══
+  "公共卫生": makePapers("公共卫生", [
+    { year:2016, month:8, title:"Zika Virus and Congenital Microcephaly: Causation", authors:"Rasmussen S et al.", focus:"寨卡病毒与先天性小头畸形因果关系", citations:7600, abstract:"确认母婴寨卡病毒感染导致新生儿小头畸形和先天性寨卡综合征的因果关系。", coreArgument:"通过流行病学、病毒学和动物模型三层证据，基于Bradford Hill准则确认寨卡病毒是先天性小头畸形的因果致病因素，加速了WHO宣布寨卡为国际公共卫生紧急事件。", role:"2016年寨卡疫情的关键科学定论，推动了快速诊断、蚊媒控制和疫苗开发的全球响应。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMsr1604338", tags:["寨卡病毒","流行病","传染病"], venue:"NEJM 2016" },
+    { year:2020, month:1, title:"Clinical Characteristics of COVID-19: Initial 41 Cases", authors:"Huang C et al.", focus:"COVID-19首批患者临床特征", citations:32000, abstract:"报道武汉41例COVID-19住院患者的临床、实验室和影像特征，描述疾病早期临床谱。", coreArgument:"分析武汉首批41例患者：发热（98%）、干咳（76%）为主要症状，ICU患者中细胞因子风暴和ARDS是主要死亡原因，病毒基因组与蝙蝠冠状病毒同源性达96%，提示人畜共患起源。", role:"COVID-19疫情早期最重要的临床描述论文之一，对全球各国早期诊疗指南制定和疫情响应策略产生了决定性影响，被引用超3万次。", paperUrl:"https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30183-5/fulltext", tags:["COVID-19","新冠肺炎","流行病学"], venue:"Lancet 2020" },
+    { year:2021, month:4, title:"Real-World Effectiveness of COVID-19 Vaccines", authors:"Vasileiou E et al.", focus:"COVID-19疫苗真实世界有效性", citations:8900, abstract:"基于英国百万级真实世界队列评估BNT162b2和ChAdOx1疫苗对有症状感染和重症的保护效力。", coreArgument:"苏格兰国家队列数据（160万人接种）显示，接种BNT162b2（辉瑞/BioNTech）和ChAdOx1（阿斯利康）疫苗4周后，住院风险分别降低85%和94%；对有症状感染的保护效力约60-80%。", role:"COVID-19疫苗真实世界有效性的权威证据，为全球各国疫苗接种政策制定提供了最直接的数据支撑，是疫情应对史上最具影响力的公共卫生研究之一。", paperUrl:"https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(21)00677-2/fulltext", tags:["疫苗","COVID-19","真实世界"], venue:"Lancet 2021" },
+    { year:2022, month:3, title:"Global Burden of Disease: 2000-2019 Trends", authors:"GBD 2019 Collaborators", focus:"全球疾病负担趋势分析", citations:18000, abstract:"基于全球195国数据，分析2000-2019年全球主要疾病死亡率、发病率和致残率的变化趋势。", coreArgument:"全球人均寿命从2000年的67.2岁增至2019年的73.5岁，主要驱动因素是传染病死亡率下降；慢性非传染性疾病占全球死亡比例升至74%；低收入国家传染病负担仍居高不下。", role:"全球公共卫生政策最重要的基础数据来源，GBD系列研究直接影响WHO优先议题设定、各国卫生经费分配和SDG健康目标制定。", paperUrl:"https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30752-2/fulltext", tags:["疾病负担","全球卫生","流行病学"], venue:"Lancet 2020" },
+    { year:2023, month:7, title:"Antimicrobial Resistance: A Global Threat", authors:"Antimicrobial Resistance Collaborators", focus:"全球抗菌素耐药现状与应对", citations:9600, abstract:"分析2019年全球抗菌素耐药细菌直接导致127万人死亡的流行现状、耐药机制和全球行动计划框架。", coreArgument:"碳青霉烯耐药的鲍曼不动杆菌（CRAB）、耐甲氧西林金黄色葡萄球菌（MRSA）等超级细菌是最紧迫的公共卫生威胁；全球行动计划需从减少滥用、开发新抗生素和加强监测三维度协同推进。", role:"全球抗菌素耐药领域的权威研究，对各国卫生部门制定AMR防控策略（抗生素分级管理、新型抗菌药研发激励）有重要指导意义。", paperUrl:"https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(21)02724-0/fulltext", tags:["抗菌素耐药","AMR","超级细菌"], venue:"Lancet 2022" },
+    { year:2024, month:2, title:"AI in Epidemiology: Disease Surveillance and Prediction", authors:"Brownstein J et al.", focus:"AI辅助流行病学预警预测", citations:2900, abstract:"综述机器学习和自然语言处理在传染病早期预警、传播建模和疫情响应中的最新应用。", coreArgument:"整合电子医疗记录、社交媒体数据、搜索引擎趋势和人口流动数据，用集成机器学习模型实现流感样疾病发病率的2-4周提前预警，比传统CDC监测系统提前约2周发现异常信号。", role:"数字流行病学与AI预警的重要综述，COVID-19大流行极大推动了AI赋能传染病监测体系的建立，WHO和各国CDC正在构建的数字化疾病监测网络受此类研究直接推动。", paperUrl:"https://www.nature.com/articles/s41591-023-02583-1", tags:["AI流行病","数字监测","预警系统"], venue:"Nature Med 2024" },
+  ]),
+  // ══ 人文社会科学：经济学 ══
+  "经济学": makePapers("经济学", [
+    { year:2016, month:5, title:"Tirole: Platform Economics and Two-Sided Markets", authors:"Tirole J", focus:"平台经济学与双边市场", citations:12000, abstract:"分析双边平台市场的定价机制、网络效应和竞争政策，为数字经济平台监管提供理论基础。", coreArgument:"双边平台（如信用卡网络、操作系统、网约车）需要同时吸引两端用户，最优定价策略由两端需求弹性和交叉网络外部性共同决定，不能简单适用传统单边市场的竞争政策。", role:"数字平台经济理论的奠基性工作，Tirole因此获2014年诺贝尔经济学奖，其双边市场理论是监管当局分析Google、Apple、Amazon等平台竞争行为的核心框架。", paperUrl:"https://doi.org/10.1093/qje/qjr044", tags:["平台经济","双边市场","网络效应"], venue:"QJE 2003" },
+    { year:2018, month:4, title:"Robots and Employment: Causal Evidence", authors:"Acemoglu D, Restrepo P", focus:"机器人化对劳动力市场的因果影响", citations:9800, abstract:"量化分析机器人和自动化对美国本地就业和工资的负面影响，评估政策应对措施。", coreArgument:"利用工业机器人渗透率的IV估计，发现每1000名工人增加1台机器人导致同地区就业减少约0.18-0.34个百分点，制造业低技能工人受影响最大；自动化与劳动生产率提升之间存在明显悖论（生产率提升与工资增长脱钩）。", role:"技术性失业研究领域的代表性实证论文，直接推动了全民基本收入（UBI）、职业再培训和机器人税等政策讨论，对理解当前AI驱动的劳动力市场变革有重要现实意义。", paperUrl:"https://doi.org/10.1257/aer.20160696", tags:["自动化","劳动力市场","工资不平等"], venue:"AER 2020" },
+    { year:2019, month:6, title:"Machine Learning Methods in Economics", authors:"Athey S, Imbens G", focus:"机器学习方法在经济学中的应用", citations:8200, abstract:"系统介绍机器学习方法在因果推断、政策评估和预测任务中的经济学应用框架。", coreArgument:"区分机器学习在经济学中的两类任务：纯预测任务（可直接应用ML）和因果推断任务（ML需结合双重机器学习DML等方法），提出正交化原则确保因果参数估计的鲁棒性。", role:"计量经济学与机器学习融合的奠基性综述，双重机器学习（DML）方法已成为高维控制变量下处理效应估计的标准工具，是当代实证经济学研究的核心方法论创新。", paperUrl:"https://arxiv.org/abs/1903.10075", tags:["因果推断","双重机器学习","计量经济学"], venue:"Annual Rev Econ 2019" },
+    { year:2020, month:8, title:"Nudge Theory in Public Policy", authors:"Thaler R, Sunstein C", focus:"助推理论公共政策应用", citations:14000, abstract:"综述助推理论（Nudge Theory）在公共政策中的应用，分析选择架构如何改善个人决策。", coreArgument:"人们的决策深受默认选项、社会规范和锚定效应等认知偏差影响，通过精心设计选择架构（保留自由选择、改变默认设置或呈现方式）可在不强制的前提下显著改善退休储蓄率、器官捐献率和能源节约行为。", role:"行为公共政策的奠基性著作，Thaler因此获2017年诺贝尔经济学奖，助推理论已被英美政府和WHO广泛应用于公共卫生、环保和金融监管政策设计中。", paperUrl:"https://yalebooks.yale.edu/book/9780300122237/nudge/", tags:["行为经济学","助推","公共政策"], venue:"Yale UP 2008" },
+    { year:2022, month:7, title:"Central Bank Digital Currency: Design and Policy", authors:"Carstens A (BIS)", focus:"央行数字货币设计与政策", citations:3900, abstract:"分析央行数字货币（CBDC）的设计原则、货币政策影响和金融稳定风险。", coreArgument:"CBDC需在零售可及性（金融包容vs商业银行脱媒风险）、隐私与合规（交易数据与反洗钱要求）、货币政策传导三个维度取得平衡；中国数字人民币的双层运营架构提供了降低脱媒风险的参考模式。", role:"央行数字货币政策研究的权威综述，全球超100个国家正在研究或试点CBDC，中国数字人民币已在多个城市大规模试点，本文提供的政策框架对各国央行CBDC设计决策有重要参考价值。", paperUrl:"https://www.bis.org/publ/work941.pdf", tags:["数字货币","CBDC","货币政策"], venue:"BIS Working Paper 2021" },
+    { year:2023, month:9, title:"AI and the Economy: Skills, Wages and Inequality", authors:"Acemoglu D", focus:"人工智能与经济不平等", citations:4100, abstract:"分析人工智能技术发展对工资不平等、技能溢价和资本-劳动收入分配的影响机制与政策启示。", coreArgument:"AI技术对劳动力市场的影响取决于其替代性还是互补性，当前AI主要替代认知-常规任务，对中等技能工人冲击最大；AI收益集中于资本所有者和高技能工人，加剧收入不平等；税收政策是纠正分配扭曲的必要手段。", role:"AI经济影响研究的重要理论框架，推动了全球AI监管和劳动市场政策的讨论，对各国政府应对AI经济冲击的政策设计具有重要参考意义。", paperUrl:"https://arxiv.org/abs/2306.14960", tags:["人工智能","收入不平等","技术进步"], venue:"arXiv 2023" },
+  ]),
+  // ══ 交叉前沿：合成生物学 ══
+  "合成生物学": makePapers("合成生物学", [
+    { year:2016, month:3, title:"Sc2.0: Synthetic Yeast Chromosome III", authors:"Annaluru N et al.", focus:"酵母染色体人工合成", citations:4800, abstract:"报道通过化学合成手段重新设计并合成酵母染色体III，实现真核生物基因组重编程。", coreArgument:"通过计算机辅助设计重编码约272kb的酵母3号染色体，删除冗余序列、重编码密码子、插入LoxP位点实现可编程基因组重排，合成染色体的酵母细胞在标准条件下正常生长，验证了真核基因组化学合成的可行性。", role:"真核生物基因组合成的里程碑，Sc2.0项目的核心组成论文，为工业底盘细胞设计和基因组规模代谢工程提供了技术蓝图。", paperUrl:"https://www.science.org/doi/10.1126/science.1249252", tags:["基因组合成","酵母","代谢工程"], venue:"Science 2014" },
+    { year:2018, month:4, title:"Directed Evolution of Enzymes for New Chemistry", authors:"Arnold F", focus:"酶的定向进化诺贝尔奖工作", citations:9800, abstract:"综述定向进化技术在催化不自然化学反应的新型酶创制中的突破性进展。", coreArgument:"通过多轮随机突变（易错PCR）和筛选，将天然蛋白质进化出自然界不存在的催化功能（如C-H键硅化、碳硅键形成），无需理解催化机理即可通过迭代筛选获得高活性、高选择性的工业酶。", role:"Frances Arnold因此获2018年诺贝尔化学奖，定向进化已成为工业酶、药物酶和材料蛋白创制的标准手段，推动了生物催化在绿色化学中的广泛应用。", paperUrl:"https://www.science.org/doi/10.1126/science.aar5967", tags:["定向进化","酶工程","蛋白质设计"], venue:"Science 2018" },
+    { year:2019, month:8, title:"Cell-Free Synthetic Biology for Diagnostics", authors:"Pardee K et al.", focus:"无细胞合成生物学诊断应用", citations:5200, abstract:"展示无细胞蛋白质表达系统用于基因回路快速原型设计、诊断试剂盒和现场合成药物。", coreArgument:"无细胞转录翻译（TXTL）系统将生化机器从活细胞中解放出来：无需遗传工程即可快速测试基因回路设计，与冻干纸基结合后可常温保存，在寨卡病毒诊断（SHERLOCK）和偏远地区药物现场合成中展示了独特优势。", role:"无细胞合成生物学领域的重要推动论文，无细胞系统在点对点医疗（POC诊断）和应急医药生产中有独特价值，COVID-19期间快速诊断试纸的技术基础部分来自此类研究。", paperUrl:"https://www.cell.com/cell/fulltext/S0092-8674(16)30279-5", tags:["无细胞系统","基因回路","诊断"], venue:"Cell 2016" },
+    { year:2020, month:7, title:"AlphaFold: Protein Structure Prediction Revolution", authors:"Senior A et al. (DeepMind)", focus:"AlphaFold蛋白质结构预测突破", citations:18000, abstract:"展示AlphaFold2实现近实验精度的蛋白质结构预测，解决了50年的生物学核心挑战。", coreArgument:"AlphaFold2结合多序列比对（MSA）和进化耦合分析，用深度Transformer网络直接预测蛋白质三维结构，在CASP14中最难类别的中位Cα-RMSD达1.6Å，在实验结构精度内解决了大多数蛋白质折叠问题。", role:"蛋白质科学的革命性突破，AlphaFold结构数据库（2亿多个结构）已成为生命科学研究的核心基础设施，推动了蛋白质设计、药物发现和合成生物学的全面加速。", paperUrl:"https://www.nature.com/articles/s41586-021-03819-2", tags:["AlphaFold","蛋白质结构","深度学习"], venue:"Nature 2021" },
+    { year:2021, month:9, title:"Repressilator: Synthetic Gene Oscillator", authors:"Elowitz M, Leibler S", focus:"合成基因振荡器", citations:8900, abstract:"综述合成基因振荡器、逻辑门和记忆回路等基因回路设计在细胞工程中的应用。", coreArgument:"通过组合转录调控元件在大肠杆菌中构建repressilator（三节点负反馈振荡器），产生约150min的稳定基因表达振荡，证明了合成基因回路可实现定义好的动态行为，奠定了工程化细胞程序设计的基础。", role:"合成生物学领域最重要的奠基性实验之一，repressilator是合成生物学教科书的经典案例，推动了后续细胞计算器、生物传感器和工程微生物疗法的大量研究。", paperUrl:"https://www.nature.com/articles/35002125", tags:["基因回路","振荡器","细胞工程"], venue:"Nature 2000" },
+    { year:2022, month:7, title:"Biosafety in Synthetic Biology: Risk and Ethics", authors:"Esvelt K, Church G", focus:"合成生物学生物安全与伦理", citations:3800, abstract:"分析基因驱动、病原体合成和生物武器扩散的风险，提出合成生物学研究伦理框架。", coreArgument:"基因驱动技术（Gene Drive）可在野生种群中快速传播改造基因，存在非预期生态影响和双重用途风险；提出逐级负责任研究框架：封闭实验室测试→限制性户外试验→监管审批→公众参与。", role:"合成生物学治理领域的重要框架性论文，直接影响WHO、美国DARPA和各国生物安全委员会对合成生物学研究的监管政策设计。", paperUrl:"https://www.science.org/doi/10.1126/science.1237394", tags:["生物安全","基因驱动","科研伦理"], venue:"Science 2014" },
+    { year:2023, month:10, title:"Engineered Microbiome as Living Therapeutics", authors:"Sonnenburg J, Sonnenburg E", focus:"工程化肠道菌群活体疗法", citations:2700, abstract:"综述合成生物学工程化肠道菌群的最新进展及其在炎症性肠病、代谢疾病中的治疗应用。", coreArgument:"利用合成生物学工具将肠道益生菌改造为活体治疗药物（LBP）：植入感应炎症信号的基因回路、按需分泌IL-10等抗炎分子或GLP-1等代谢调节肽，在IBD小鼠模型中显著降低炎症指标，工程菌株已进入I/II期临床试验。", role:"活体药物（Living Medicines）的重要综述，工程化肠道菌作为精准分泌平台代表了药物递送的全新范式，在局部炎症疾病（UC、CD）和代谢综合征中有独特优势。", paperUrl:"https://www.nature.com/articles/s41586-021-03922-4", tags:["肠道菌群","工程菌","活体药物"], venue:"Nature 2024" },
+    { year:2024, month:5, title:"RFdiffusion: De Novo Protein Design", authors:"Watson J et al. (Baker Lab)", focus:"从头蛋白质设计", citations:5100, abstract:"展示深度扩散模型RFdiffusion实现目标功能蛋白质的从头设计，包括酶、纳米颗粒和蛋白质复合体。", coreArgument:"将去噪扩散概率模型（DDPM）应用于蛋白质骨架生成（RFdiffusion），结合RoseTTAFold结构预测和蛋白质序列设计（ProteinMPNN），实现对称纳米颗粒、酶活性位点、与靶蛋白结合的迷你蛋白等多类功能蛋白的高精度从头设计，湿实验验证率>50%。", role:"蛋白质设计领域的革命性突破，扩散模型使得任意形状和功能的蛋白质从头设计成为现实，对新型酶催化剂、疫苗载体和治疗性蛋白药物的开发具有里程碑意义。", paperUrl:"https://www.nature.com/articles/s41586-023-06415-8", tags:["蛋白质设计","扩散模型","从头设计"], venue:"Nature 2024" },
+  ]),
+  // ══ 交叉前沿：脑科学/神经科学 ══
+  "脑科学": makePapers("脑科学", [
+    { year:2016, month:4, title:"Connectomics: Large-Scale Brain Wiring", authors:"Sporns O", focus:"脑连接组学与功能", citations:8900, abstract:"综述脑连接组学研究方法、从微观突触到宏观功能网络的多尺度分析框架。", coreArgument:"脑连接组学从突触尺度（电子显微镜重建）、微回路尺度（多电极阵列）到全脑网络尺度（fMRI/DTI）系统描述神经连接模式，图论分析揭示了脑网络的高效信息整合原理。", role:"脑连接组学领域的奠基性综述，推动了人类连接组计划（HCP）和美国BRAIN计划的启动，是理解脑组织原理和神经精神疾病机制的重要理论框架。", paperUrl:"https://www.nature.com/articles/nrn3451", tags:["连接组","神经网络","fMRI"], venue:"Nature Rev Neurosci 2013" },
+    { year:2018, month:5, title:"Optogenetics: Circuit-Level Control of Behavior", authors:"Deisseroth K", focus:"光遗传学神经回路精准调控", citations:12500, abstract:"综述光遗传学技术在解析精神疾病、学习记忆和感知觉神经回路中的突破性应用。", coreArgument:"将视蛋白基因（ChR2兴奋性/NpHR抑制性）通过病毒载体递送至特定神经元亚型，利用光纤局部照射实现毫秒级可逆的特异性神经元激活或抑制，建立细胞类型-行为因果图谱。", role:"现代神经科学方法学革命的代表，光遗传学使研究者首次可以精确操控特定类型神经元，推动了对恐惧记忆、奖励回路、睡眠调节等核心问题的突破性认识。", paperUrl:"https://www.nature.com/articles/nature09971", tags:["光遗传学","神经回路","记忆"], venue:"Nature 2011" },
+    { year:2019, month:7, title:"Brain-Computer Interface: Motor Cortex Decoding", authors:"Shenoy K, Carmena J", focus:"脑机接口运动皮层解码", citations:5800, abstract:"综述皮质内神经记录、解码算法和脑机接口在运动康复和交流辅助中的临床进展。", coreArgument:"高密度皮质内电极阵列（Utah Array）记录100-200个神经元的放电模式，通过卡尔曼滤波或RNN解码手臂运动意图，在四肢瘫患者中实现自由度3D光标控制和机械臂操作，最新无线BCI可实现高速拼写。", role:"侵入式BCI领域的权威综述，Neuralink、BrainGate等公司的脑机接口产品研发受此类研究直接推动，BCI有望成为改变严重神经疾患患者生活质量的革命性医疗技术。", paperUrl:"https://www.nature.com/articles/s41593-023-01300-x", tags:["脑机接口","神经解码","运动康复"], venue:"Nature Neurosci 2023" },
+    { year:2020, month:9, title:"Alzheimer's Disease: Amyloid Cascade Hypothesis", authors:"Hardy J, Selkoe D", focus:"阿尔茨海默病淀粉样蛋白假说", citations:9400, abstract:"综述阿尔茨海默病淀粉样蛋白级联假说的最新进展和批评，评估新靶点治疗策略。", coreArgument:"更新的淀粉样蛋白假说强调：Aβ寡聚体（而非斑块本身）的神经毒性是突触功能障碍的直接原因，tau磷酸化是下游传播机制，APOE4等遗传因素通过影响Aβ清除和脂质代谢加速疾病进展。", role:"阿尔茨海默症研究的里程碑综述，lecanemab（Leqembi）于2023年获FDA正式批准，是近20年来第一个在临床试验中证实延缓AD进展的疾病修饰药物。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMoa2212948", tags:["阿尔茨海默","Aβ","神经退行性"], venue:"NEJM 2023" },
+    { year:2021, month:11, title:"Psychedelic-Assisted Therapy for Depression", authors:"Carhart-Harris R et al.", focus:"迷幻药辅助治疗难治性抑郁症", citations:3800, abstract:"报道裸盖菇素（psilocybin）在难治性抑郁症治疗中的随机对照临床试验结果。", coreArgument:"裸盖菇素辅助心理治疗在难治性抑郁症（TRD）II期临床中实现临床反应率58%，其机制为5-HT2A受体激动导致的默认网络（DMN）去同步化和神经可塑性增强（BDNF升高）。", role:"精神疾病治疗范式转变的重要研究，裸盖菇素获得FDA突破性疗法认定，迷幻药辅助治疗已成为精神病学研究的最热点方向，有望为数百万难治性抑郁症患者提供全新治疗选项。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMoa2107332", tags:["神经精神病学","迷幻药","抑郁症"], venue:"NEJM 2021" },
+    { year:2023, month:6, title:"Brain Organoids for Neurodevelopmental Modeling", authors:"Lancaster M, Knoblich J", focus:"脑类器官模拟神经发育", citations:5100, abstract:"综述脑类器官（Brain Organoids）技术在模拟人类神经发育、疾病建模和药物筛选中的应用。", coreArgument:"三维脑类器官通过将人类多能干细胞在特定生长因子组合下自组织分化，可重现大脑皮层发育的关键步骤，在自闭症、小头畸形、寨卡病毒感染等疾病模型中揭示人类特异性发育机制。", role:"类器官技术在神经科学中应用的标志性综述，脑类器官成为理解人类特异性神经发育机制的核心模型体系，为脑疾病药物筛选和基因治疗验证提供了人类特异性实验平台。", paperUrl:"https://www.nature.com/articles/s41593-022-01143-0", tags:["类器官","神经发育","干细胞"], venue:"Nature Neurosci 2022" },
+    { year:2024, month:3, title:"Large-Scale Brain Atlas: BRAIN Initiative Results", authors:"NIH BRAIN Initiative Consortium", focus:"全脑细胞图谱BRAIN计划成果", citations:4200, abstract:"美国BRAIN计划联合发布人类全脑细胞类型分类图谱，实现单细胞分辨率的神经元类型注释。", coreArgument:"通过整合单细胞RNA测序、空间转录组学和电生理学数据，在人类大脑皮层和皮层下区域鉴定出3000+种细胞类型，建立了形态-分子-功能多层次对应关系，为神经精神疾病的细胞机制研究提供了全面参考图谱。", role:"神经科学领域的历史性基础建设成果，人类全脑细胞图谱将成为脑研究的核心参考资源，对理解各类神经精神疾病（精神分裂症、抑郁症、自闭症等）的细胞基础具有决定性意义。", paperUrl:"https://www.science.org/doi/10.1126/science.adf6812", tags:["脑细胞图谱","单细胞组学","BRAIN计划"], venue:"Science 2023" },
+  ]),
+  // ══ 环境/地球科学 ══
+  "环境科学": makePapers("环境科学", [
+    { year:2016, month:9, title:"Planetary Boundaries: Nine Earth System Limits", authors:"Rockström J et al.", focus:"地球安全运行空间边界框架", citations:14000, abstract:"定义维持地球系统稳定性的九个行星边界，评估当前人类活动对各边界的压力状况。", coreArgument:"提出九大行星边界（气候变化、生物圈完整性、土地系统变化、淡水利用、生物地球化学循环等）的定量阈值，评估生物完整性边界和氮磷循环已超出安全边界，构成全球可持续发展的核心约束条件。", role:"地球系统科学的里程碑框架，行星边界概念被联合国可持续发展目标（SDGs）和国家政策制定广泛引用，为评估人类活动的地球安全风险提供了统一的科学框架。", paperUrl:"https://www.science.org/doi/10.1126/science.1259855", tags:["行星边界","可持续发展","地球系统"], venue:"Science 2015" },
+    { year:2018, month:4, title:"Microplastics in Global Ocean Ecosystems", authors:"Beaumont N et al.", focus:"海洋微塑料污染生态影响", citations:8900, abstract:"系统评估微塑料对海洋生物、生态系统服务和人类健康的影响及经济成本。", coreArgument:"微塑料通过物理（鱼类误食影响摄食）、化学（吸附持久性有机污染物POPs后富集在食物链高端）和生物（作为外来病原微生物载体）三条途径影响海洋生态系统，每年造成约130-166亿美元经济损失。", role:"微塑料全球污染问题的权威综述，推动了联合国环境大会（UNEA）就全球塑料污染立法谈判，以及各国对一次性塑料的管控政策。", paperUrl:"https://doi.org/10.1016/j.marpolbul.2018.10.052", tags:["微塑料","海洋污染","生态毒理"], venue:"Marine Pollution Bull 2019" },
+    { year:2019, month:5, title:"IPBES: Global Biodiversity Assessment 2019", authors:"Díaz S et al. (IPBES)", focus:"全球生物多样性评估报告", citations:11000, abstract:"IPBES全球评估报告分析人类活动导致的生物多样性丧失规模、驱动因素和影响。", coreArgument:"过去50年地球上约100万种植物和动物面临灭绝威胁，主要驱动因素为土地/海洋利用变化（#1）、直接物种开采（#2）、气候变化（#3）、污染（#4）和入侵物种（#5），灭绝速度是自然背景的数百倍。", role:"当代生物多样性研究最权威的综合报告，直接推动了2022年昆明-蒙特利尔全球生物多样性框架（GBF）的谈判，为30×30目标提供了科学依据。", paperUrl:"https://doi.org/10.1126/science.aax3100", tags:["生物多样性","物种灭绝","生态系统"], venue:"Science 2019" },
+    { year:2020, month:6, title:"Remote Sensing and AI for Environmental Monitoring", authors:"Turner W et al.", focus:"遥感与AI环境监测", citations:6400, abstract:"综述卫星遥感、无人机和机器学习在生物多样性、土地利用变化和生态系统监测中的应用。", coreArgument:"新一代地球观测系统配合深度学习可实现全球森林砍伐、湿地退化和冰川消融的准实时监测，空间分辨率从30m提升至<3m，时间分辨率从月缩短至日，大幅提升了生态变化的早期预警能力。", role:"遥感地球观测领域的重要综述，机器学习与卫星遥感的结合正在革命性地提升全球环境变化监测能力，全球森林观测（GFW）等监测体系直接受益于此类技术进展。", paperUrl:"https://doi.org/10.1126/sciadv.abl8162", tags:["遥感","Earth Observation","生态监测"], venue:"Science Advances 2021" },
+    { year:2022, month:7, title:"Climate Tipping Points: Updated Thresholds", authors:"Armstrong McKay D et al.", focus:"地球系统气候临界点", citations:5700, abstract:"系统分析亚马逊森林枯死、格陵兰冰盖崩塌等地球系统临界点的触发阈值和级联效应。", coreArgument:"重新评估16个主要气候临界点的温度阈值，发现格陵兰冰盖、西南极冰盖、亚马逊雨林等临界点可能在1.5°C以内被触发，且多个临界点之间存在级联耦合，一旦越过则不可逆。", role:"地球系统临界点研究的重要更新，其发现的临界阈值低于IPCC先前估计，对《巴黎协定》1.5°C目标的紧迫性提出了更强科学支持，推动了全球气候谈判朝更激进的减排目标方向。", paperUrl:"https://www.science.org/doi/10.1126/science.abn7950", tags:["临界点","地球系统","气候变化"], venue:"Science 2022" },
+    { year:2023, month:5, title:"Deep-Sea Biodiversity and Mining Impacts", authors:"Amon D et al.", focus:"深海生物多样性与采矿影响", citations:2900, abstract:"评估深海采矿（锰结核、热液硫化物）对深海生物多样性和生态系统服务的潜在影响。", coreArgument:"深海（>200m）储存了全球超60%的海洋生物多样性，锰结核区物种恢复周期长达数百年；深海采矿激起的沉积物羽流影响范围可超采矿点数百公里，在国际海底管理局（ISA）制定开采规范前应实施预防性暂停采矿原则。", role:"深海生物多样性保护与资源开发冲突的核心科学依据，对新能源电池原材料（钴、锂、锰）供应链的可持续性政策和国际海洋法的发展有重要影响。", paperUrl:"https://doi.org/10.1016/j.oneear.2022.05.006", tags:["深海生态","生物多样性","海洋采矿"], venue:"One Earth 2022" },
+  ]),
+  // ══ 农业科学 ══
+  "农业科学": makePapers("农业科学", [
+    { year:2016, month:4, title:"Rice Yield Under Climate Change: Projections", authors:"Lobell D et al.", focus:"气候变化对水稻产量的影响", citations:6200, abstract:"量化分析温度升高、CO2浓度变化对全球水稻产量的综合影响，构建适应性育种策略。", coreArgument:"温度每升高1°C导致水稻产量下降约3-7%（生育期缩短+花粉活力降低），而CO2浓度升高带来约8%增产效应，二者相抵后到2050年水稻净产量将下降约2-6%，热带高纬度分异显著。", role:"气候变化对粮食安全影响的核心实证研究，为国际水稻研究所（IRRI）制定气候适应育种策略提供了定量科学依据。", paperUrl:"https://www.science.org/doi/10.1126/science.abc7672", tags:["粮食安全","气候适应","作物模型"], venue:"Science 2020" },
+    { year:2018, month:6, title:"Precision Agriculture: Machine Learning Applications", authors:"Liakos K et al.", focus:"精准农业机器学习应用", citations:7500, abstract:"综述机器学习和物联网传感器在精准农业中的应用，包括产量预测、病虫害检测和水肥管理。", coreArgument:"精准农业系统整合多源传感数据（无人机多光谱/高光谱、土壤传感器阵列、气象站），用机器学习实现田间作物分析、虫害早期识别和变量施肥处方，可减少化肥投入约10-15%、农药用量约20-30%。", role:"智慧农业领域的重要综述，精准农业技术正在被全球大型农场和农业科技企业广泛应用，对保障粮食安全、减少农业面源污染有重要意义。", paperUrl:"https://www.mdpi.com/2076-3417/8/8/1307", tags:["精准农业","物联网","机器学习"], venue:"Applied Sciences 2018" },
+    { year:2019, month:9, title:"Plant Drought Resistance: ABA Signaling Pathway", authors:"Cutler S et al.", focus:"植物抗旱ABA信号通路", citations:5400, abstract:"深入分析植物脱落酸（ABA）信号通路介导的气孔调控和渗透胁迫应答机制。", coreArgument:"揭示ABA受体PYR/PYL蛋白的三维结构和作用机制：在水分胁迫下ABA与PYR结合后抑制PP2C磷酸酶，激活SnRK2激酶磷酸化SLAC1阴离子通道导致气孔关闭，为设计耐旱转基因作物提供了明确的分子靶点。", role:"作物耐旱分子育种的理论基础，PYR/PYL-PP2C-SnRK2 ABA信号模块的解析推动了过表达ABF转录因子的耐旱玉米品种研发，已在非洲旱区推广种植，提高粮食安全。", paperUrl:"https://www.annualreviews.org/content/journals/10.1146/annurev-arplant-071921-100550", tags:["抗旱育种","ABA信号","气孔调控"], venue:"Annual Rev Plant Biol 2022" },
+    { year:2020, month:11, title:"Vertical Farming: Economics and Technology", authors:"Benke K, Tomkins B", focus:"垂直农业技术经济分析", citations:4100, abstract:"系统分析LED补光、水培/气雾栽培和环境控制技术在垂直农场中的应用和经济可行性。", coreArgument:"垂直农场通过LED光照优化配比、精准营养液循环和温湿CO2密闭调控，实现生菜类蔬菜传统农业5-10倍的单位面积产量，但能耗成本（占总成本30-40%）是规模化的核心瓶颈。", role:"垂直农业商业化的重要经济分析论文，为AeroFarms、Bowery Farming等垂直农业企业提供了技术路线图，在粮食安全和城市农业可持续发展的讨论中具有重要参考价值。", paperUrl:"https://doi.org/10.1080/07352689.2022.2035221", tags:["垂直农业","城市农业","食物系统"], venue:"CRC Press 2018" },
+    { year:2022, month:4, title:"Soil Microbiome and Plant Health", authors:"Berendsen R et al.", focus:"土壤微生物组与植物健康", citations:7800, abstract:"综述土壤微生物组在植物营养吸收、病害抵御和胁迫响应中的核心作用机制。", coreArgument:"植物根系通过分泌特异性次生代谢产物（根系分泌物）定向招募有益微生物群落（SynCom），这些土著微生物为宿主提供氮磷营养、产生生长激素（IAA、细胞分裂素）和诱导系统抗性，土壤微生物组多样性是土地可持续利用的关键生态指标。", role:"土壤健康与微生物组研究的权威综述，微生物肥料和生物农药的开发受其直接推动，对减少化学投入品依赖、推进可持续农业有重要指导意义。", paperUrl:"https://www.nature.com/articles/nature14213", tags:["土壤微生物","根际","植物营养"], venue:"Nature 2015" },
+    { year:2023, month:3, title:"Food Security in a Changing Climate", authors:"IPCC WGII Chapter 5", focus:"气候变化下全球粮食安全", citations:9400, abstract:"IPCC第六次评估报告分析气候变化对全球粮食生产、分配和营养安全的综合影响。", coreArgument:"到2050年气候变化将导致全球粮食产量下降约2-6%，而粮食需求增加约50%（人口增长+饮食转型），南亚和撒哈拉以南非洲脆弱性最高；适应措施（气候适应品种、灌溉优化、减少食物损耗）可抵消约40-50%的产量损失。", role:"气候变化粮食安全政策的核心科学依据，为FAO全球粮食安全战略、国家农业适应规划（NAPA）和粮食系统转型提供了定量科学支撑。", paperUrl:"https://www.ipcc.ch/report/ar6/wg2/chapter/chapter-5/", tags:["粮食安全","IPCC","气候适应"], venue:"IPCC AR6 2022" },
+  ]),
+  // ══ 生物信息学（交叉前沿）══
+  "生物信息学": makePapers("生物信息学", [
+    { year:2016, month:5, title:"Drop-seq: Single-Cell RNA-Seq Technology", authors:"Macosko E et al.", focus:"单细胞RNA测序高通量技术", citations:14000, abstract:"开发Drop-seq高通量单细胞RNA测序技术，实现对视网膜数万个细胞转录组的系统分析。", coreArgument:"利用微流控液滴封装单个细胞与条形码微珠，实现大规模平行单细胞测序（Drop-seq，每个细胞独立转录组），在小鼠视网膜中识别出39种细胞类型，构建首个器官级单细胞转录组图谱。", role:"单细胞组学时代的开创性方法学论文，推动了人类细胞图谱（HCA）计划的启动，单细胞测序已成为发育生物学、免疫学和肿瘤学研究的标准技术。", paperUrl:"https://www.cell.com/cell/fulltext/S0092-8674(15)00549-8", tags:["单细胞测序","转录组","细胞图谱"], venue:"Cell 2015" },
+    { year:2017, month:8, title:"GATK: Best Practices for Variant Discovery", authors:"McKenna A et al.", focus:"基因组变异检测标准流程", citations:18000, abstract:"介绍GATK基因组分析工具包的变异检测最佳实践流程，成为全球基因组学研究标准。", coreArgument:"GATK HaplotypeCaller通过局部重组装（De Bruijn图）实现SNP和InDel的联合检测，配合BQSR和VQSR，在全基因组测序中实现>99%的变异检测精确率和灵敏度，奠定了临床基因诊断的质控标准。", role:"基因组学数据分析的行业标准框架，GATK已成为全球千基因组计划、UK Biobank等大型基因组队列研究的标准分析流程，对精准医学基因诊断的质量控制具有决定性意义。", paperUrl:"https://genome.cshlp.org/content/20/9/1297", tags:["基因组学","变异检测","NGS"], venue:"Genome Res 2010" },
+    { year:2019, month:7, title:"Multi-Omics Integration for Systems Biology", authors:"Huang S et al.", focus:"多组学整合系统生物学", citations:6200, abstract:"综述基因组、转录组、蛋白质组和代谢组数据的整合方法及其在疾病机制研究中的应用。", coreArgument:"多组学整合策略：线性整合（CCA/MOFA）、网络整合（多层网络/知识图谱）和机器学习融合，在乳腺癌亚型分类、糖尿病代谢通路解析和个性化用药预测中，多组学融合比单组学模型显著提升准确性。", role:"系统医学数据整合的权威综述，多组学整合框架已成为精准医学和生物标志物发现的标准研究范式，对理解复杂疾病的多层次调控网络有重要理论价值。", paperUrl:"https://doi.org/10.1016/j.cell.2020.11.023", tags:["多组学","系统生物学","精准医学"], venue:"Cell 2021" },
+    { year:2021, month:6, title:"AlphaFold2: Highly Accurate Protein Structure Prediction", authors:"Jumper J et al.", focus:"AlphaFold2原子精度蛋白质结构预测", citations:25000, abstract:"展示AlphaFold2用深度学习实现接近实验精度的蛋白质结构预测，在CASP14挑战中获胜。", coreArgument:"AlphaFold2结合多序列比对（MSA）、进化耦合分析和Evoformer深度网络，用端到端可微分的框架预测蛋白质三维结构，在最难目标类别中中位Cα-RMSD达1.6Å，接近实验结构精度。", role:"蛋白质科学的革命性突破，AlphaFold结构数据库（2亿多个结构）已成为生命科学研究的核心基础设施，推动了蛋白质设计、药物发现和合成生物学的全面加速。", paperUrl:"https://www.nature.com/articles/s41586-021-03819-2", tags:["AlphaFold","蛋白质折叠","结构预测"], venue:"Nature 2021" },
+    { year:2022, month:3, title:"T2T: Complete Human Genome Assembly", authors:"Nurk S et al.", focus:"人类基因组端粒到端粒完整组装", citations:5100, abstract:"T2T联盟利用三代测序首次完成人类基因组的端粒到端粒完整组装，填补近8%的空白区域。", coreArgument:"结合PacBio HiFi和ONT超长读长测序，T2T联盟首次完成人类基因组所有22条常染色体和X染色体的端粒到端粒完整组装，新增约2亿碱基（主要为着丝粒和异染色质区域），鉴定出近200万个此前未知的遗传变异。", role:"人类基因组学的重要里程碑，T2T完整参考基因组将改变精准医学、遗传病诊断和种群遗传学研究的基础，为理解基因组结构变异与疾病的关联提供了完整参考序列。", paperUrl:"https://www.science.org/doi/10.1126/science.abj6987", tags:["三代测序","基因组组装","T2T"], venue:"Science 2022" },
+    { year:2023, month:6, title:"Geneformer: Foundation Model for Single-Cell Omics", authors:"Theodoris C et al.", focus:"单细胞多组学基础模型", citations:4200, abstract:"提出Geneformer单细胞转录组基础模型，在零样本和少样本场景下实现跨组织基因调控网络推断。", coreArgument:"在2900万个单细胞转录组数据上预训练Geneformer模型，学习基因调控层次（枢纽基因的注意力权重）和细胞状态表示，在零样本场景下预测心脏病相关基因调控网络扰动，准确率超过实验验证的计算方法。", role:"生命科学基础模型的代表性工作，Geneformer、scGPT等单细胞AI模型预示着生物学研究将进入通用基础模型时代，对疾病机制解析和药物靶点发现有重要价值。", paperUrl:"https://www.nature.com/articles/s41586-023-06139-9", tags:["基础模型","单细胞","基因调控"], venue:"Nature 2023" },
+    { year:2024, month:4, title:"Spatial Transcriptomics: Decoding Tissue Architecture", authors:"Ståhl P et al.", focus:"空间转录组学解析组织架构", citations:8800, abstract:"综述空间转录组学技术及其在肿瘤微环境、发育生物学和神经科学中的最新应用。", coreArgument:"将组织切片直接放置于含有空间条形码的捕获阵列上，扩增转录本后测序，在保留组织空间背景的前提下获得全基因组表达图谱，首次在肿瘤微环境中揭示了细胞类型分布与相互作用的空间规律。", role:"空间组学技术的重要进展，10X Visium等商业平台被广泛应用于肿瘤微环境研究、脑组织图谱和胚胎发育研究，空间转录组学已成为发育生物学和肿瘤学的标准研究工具。", paperUrl:"https://www.science.org/doi/10.1126/science.aaf2403", tags:["空间转录组","基因表达","组织图谱"], venue:"Science 2016" },
+  ]),
+  "CRISPR基因编辑": makePapers("CRISPR基因编辑", [
+    { year:2016, month:3, title:"CRISPR-Cas9 for Medical Genetic Disorders", authors:"Doudna J, Charpentier E et al.", focus:"CRISPR-Cas9医学遗传疾病治疗", citations:18000, abstract:"综述CRISPR-Cas9在治疗镰刀型细胞病、beta-地中海贫血等遗传性血液疾病中的临床前进展。", coreArgument:"系统阐述利用CRISPR-Cas9在造血干细胞中修正致病基因突变的临床前策略，包括体外编辑后回输（ex vivo）和体内靶向递送（in vivo）两条路径，并评估脱靶效应和免疫原性风险。", role:"CRISPR从基础工具走向临床应用的关键综述，为后续镰刀型细胞病和beta-地中海贫血的CRISPR疗法临床试验奠定了科学基础，Doudna和Charpentier因此获2020年诺贝尔化学奖。", paperUrl:"https://www.science.org/doi/10.1126/science.aad4392", tags:["CRISPR","基因治疗","遗传病"], venue:"Science 2016" },
+    { year:2017, month:4, title:"Base Editing: Precise Genome Editing", authors:"Komor A et al.", focus:"碱基编辑精准基因组修改", citations:12000, abstract:"开发碱基编辑器，在不产生双链断裂的情况下精准转换单个DNA碱基，大幅降低脱靶风险。", coreArgument:"将失去催化活性的Cas9（dCas9或nCas9）与脱氨酶融合，在不切割DNA双链的情况下直接将C·G碱基对转换为T·A（CBE）或A·T转换为G·C（ABE），避免了双链断裂引起的插入缺失突变和染色体重排。", role:"CRISPR工具箱的重大扩展，碱基编辑将基因组编辑的精度从基因层面提升到单碱基层面，为治疗约50%的已知致病点突变提供了全新工具，是David Liu实验室的代表作。", paperUrl:"https://www.nature.com/articles/nature17544", tags:["碱基编辑","点突变","精准编辑"], venue:"Nature 2016" },
+    { year:2018, month:1, title:"CRISPR in Agriculture: Crop Improvement", authors:"Puchta H et al.", focus:"农业育种基因编辑应用", citations:7800, abstract:"系统综述CRISPR在作物改良中的应用，包括抗病性、产量提升、品质改善和适应气候变化育种。", coreArgument:"综述CRISPR-Cas9、Cas12a及碱基编辑在水稻、小麦、玉米、番茄等主要作物中的应用案例，分析基因编辑作物在抗病、抗逆、产量和品质四个维度的改良效果，并讨论基因编辑作物的监管政策和公众接受度。", role:"CRISPR农业应用领域的权威综述，为全球基因编辑作物的监管政策（特别是美国与欧盟的不同监管路径）提供了科学依据，推动了CRISPR育种技术的产业化。", paperUrl:"https://www.cell.com/plant-cell/fulltext/S1040-465X(18)30270-0", tags:["农业育种","作物改良","基因组学"], venue:"Plant Cell 2018" },
+    { year:2019, month:10, title:"Prime Editing: Versatile Genome Editing", authors:"Anzalone A et al.", focus:"先导编辑广谱精准基因编辑", citations:9500, abstract:"提出先导编辑技术，结合逆转录酶和pegRNA，实现所有12种点突变和小型插入缺失的高效精准编辑。", coreArgument:"将nCas9（H840A突变体）与工程化逆转录酶融合，配合携带编辑模板的pegRNA（prime editing guide RNA），在单一切割位点实现所有12种可能的碱基替换以及小型插入/缺失，且不依赖双链断裂和外源DNA模板。", role:"基因组编辑技术的重要突破，先导编辑被誉为搜索和替换式的精准编辑，理论上可修正约89%的已知致病遗传变异，是David Liu实验室继碱基编辑之后的又一里程碑贡献。", paperUrl:"https://www.nature.com/articles/s41586-019-1711-4", tags:["先导编辑","pegRNA","逆转录"], venue:"Nature 2019" },
+    { year:2020, month:5, title:"CRISPR Diagnostics: SHERLOCK and DETECTR", authors:"Gootenberg J et al.", focus:"CRISPR诊断工具临床应用", citations:8200, abstract:"展示基于CRISPR的核酸检测平台在COVID-19和其他传染病快速诊断中的应用。", coreArgument:"利用Cas13（SHERLOCK）和Cas12a（DETECTR）的旁路切割活性（collateral cleavage）：当CRISPR系统找到目标核酸后会被激活，随后无差别切割附近所有报告分子，产生荧光或试纸条信号，实现快速灵敏的分子诊断。", role:"CRISPR诊断领域的开创性工作，将CRISPR从基因编辑工具扩展为分子诊断平台，在COVID-19大流行期间获得FDA紧急使用授权，证明了CRISPR技术可在公共卫生事件中发挥即时作用。", paperUrl:"https://www.science.org/doi/10.1126/science.abb8229", tags:["CRISPR诊断","SHERLOCK","COVID-19"], venue:"Science 2020" },
+    { year:2021, month:6, title:"In Vivo CRISPR Therapy: Clinical Trials", authors:"Gillmore J et al.", focus:"体内CRISPR治疗临床试验", citations:6100, abstract:"报道首个体内CRISPR基因编辑疗法临床试验结果，治疗转甲状腺素蛋白淀粉样变性取得显著疗效。", coreArgument:"报道Intellia Therapeutics的NTLA-2001临床试验结果：通过脂质纳米粒（LNP）递送CRISPR-Cas9至肝脏，单次静脉注射即可敲除TTR基因，血清TTR蛋白水平平均下降87%，首次在人体内验证了CRISPR系统性递送的可行性。", role:"CRISPR体内基因治疗的首个临床成功案例，证明了LNP递送CRISPR在人体中的安全性和有效性，标志着CRISPR从实验室走向临床的关键转折点，入选Nature年度十大科学突破。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMoa2107454", tags:["体内基因编辑","临床试验","TTR"], venue:"NEJM 2021" },
+    { year:2022, month:10, title:"Nobel Prize Chemistry: CRISPR Legacy", authors:"Royal Swedish Academy", focus:"CRISPR诺贝尔化学奖成就回顾", citations:3400, abstract:"回顾CRISPR-Cas9基因编辑技术从细菌免疫防御机制到革命性基因组编辑工具的发展历程。", coreArgument:"回顾从1987年Ishino发现大肠杆菌中的重复序列开始，到2012年Doudna和Charpentier证明Cas9可被编程切割任意DNA，再到2020年获诺贝尔化学奖的完整科学史，分析CRISPR对生命科学、医学和农业的深远影响。", role:"CRISPR科学史上的权威总结文献，为理解一项基础科学发现如何演变为改变世界的生物技术提供了完整视角，对科学传播和科学政策教育有重要价值。", paperUrl:"https://www.nature.com/articles/s41586-022-05356-1", tags:["诺贝尔奖","科学史","分子生物学"], venue:"Nature Reviews 2022" },
+    { year:2023, month:3, title:"Epigenome Editing with CRISPR", authors:"Thakore P et al.", focus:"CRISPR表观基因组编辑", citations:2800, abstract:"综述CRISPR-dCas9与表观遗传调控因子融合的表观基因组编辑工具及其疾病治疗应用。", coreArgument:"综述将催化失活的dCas9与DNA甲基转移酶（DNMT3A）、去甲基化酶（TET1）、组蛋白修饰酶（p300、KRAB等）融合的表观基因组编辑工具，可在不改变DNA序列的前提下精确调控基因表达模式，实现可逆的基因沉默或激活。", role:"CRISPR功能从基因组编辑扩展到表观基因组调控的重要综述，为不改变DNA序列的精准基因调控开辟了新方向，在发育生物学、癌症研究和再生医学中有广泛应用前景。", paperUrl:"https://www.nature.com/articles/nmeth.4692", tags:["表观遗传","dCas9","基因调控"], venue:"Nature Methods 2023" },
+    { year:2024, month:1, title:"Ex Vivo Cell Therapy: Sickle Cell Cure", authors:"Frangoul H et al.", focus:"镰刀型细胞病基因治疗治愈", citations:1900, abstract:"报道利用CRISPR编辑患者造血干细胞治愈镰刀型细胞病的临床结果，患者无症状存活超两年。", coreArgument:"报道使用CRISPR-Cas9编辑患者自体CD34+造血干细胞中BCL11A基因增强子，重新激活胎儿血红蛋白表达，回输后患者血红蛋白水平恢复正常，随访18个月以上无血管闭塞事件发生，首次证明CRISPR可以功能性治愈遗传性血液病。", role:"CRISPR治愈遗传病的里程碑成果，直接推动了FDA于2023年批准全球首个CRISPR疗法Casgevy上市，标志着基因编辑从实验室走向临床的最终成功。", paperUrl:"https://www.nejm.org/doi/full/10.1056/NEJMoa2304247", tags:["镰刀细胞病","离体基因治疗","造血干细胞"], venue:"NEJM 2024" },
+    { year:2025, month:2, title:"Next-Generation CRISPR: Beyond DNA", authors:"Liu D et al.", focus:"下一代CRISPR超越DNA编辑", citations:420, abstract:"综述针对RNA编辑、表观遗传修饰和染色质重塑的新型CRISPR工具及活细胞成像应用。", coreArgument:"综述下一代CRISPR工具的三大方向：RNA靶向编辑（Cas13系列，实现可逆的RNA修饰而不改变基因组）、表观遗传精准调控（dCas融合系统）、以及活细胞基因组成像（dCas9-荧光标记实时追踪基因组位点），展望CRISPR从编辑工具向精准生物学操作平台的演进。", role:"CRISPR技术发展的前沿综述，描绘了CRISPR超越传统DNA编辑的广阔前景，RNA编辑和活细胞成像等新技术有望解决传统基因编辑的安全性和不可逆性问题，为基因治疗开辟新途径。", paperUrl:"https://www.cell.com/cell/fulltext/S0092-8674(25)00012-3", tags:["RNA编辑","表观遗传","CRISPR未来"], venue:"Cell 2025" },
+  ]),
+};
+
+function makePapers(keyword, arr) {
+  return arr.map((p, i) => ({ id: `${keyword}_${i}`, keyword, ...p }));
+}
+
+// ══════════════════════════════════════════════
+//  全局状态
+// ══════════════════════════════════════════════
+let currentPapers = [];
+let currentKeyword = "";
+let selectedNode = null;
+let autoRotate = false;
+let layoutMode = "3d";
+let listOpen = false;
+let activeYear = "全部";
+
+let scene, camera, renderer, controls;
+let nodeObjects = [];   // { group, paper, label }
+let edgeObjects = [];
+let raycaster, mouse;
+let hoveredNode = null;
+
+// 猫爪颜色方案（白粉毛绒系，肉垫渐变）
+const PAW_COLORS = [
+  { main: 0xfff0f5, emi: 0xffd6e8 },  // 极浅粉白
+  { main: 0xffe8f0, emi: 0xffc8e0 },
+  { main: 0xffe0ec, emi: 0xffb8d8 },
+  { main: 0xffd8e8, emi: 0xffa8d0 },
+  { main: 0xffd0e4, emi: 0xf898c4 },
+  { main: 0xf9a8d4, emi: 0xf488b8 },
+  { main: 0xf498cc, emi: 0xe878aa },
+  { main: 0xee88c4, emi: 0xd868a0 },
+  { main: 0xe478b8, emi: 0xc85896 },
+  { main: 0xd868ac, emi: 0xb8488c },
+];
+
+// ══════════════════════════════════════════════
+//  Three.js 初始化
+// ══════════════════════════════════════════════
+function initThree() {
+  const canvas = document.getElementById('three-canvas');
+  const container = document.getElementById('canvas-container');
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xfdf6f0);  // 浅奶白
+  scene.fog = new THREE.FogExp2(0xfdf6f0, 0.008);
+
+  camera = new THREE.PerspectiveCamera(58, W / H, 0.1, 800);
+  camera.position.set(0, 22, 65);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+
+  // OrbitControls
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.minDistance = 8;
+  controls.maxDistance = 200;
+
+  // 灯光 — 暖色调
+  const ambLight = new THREE.AmbientLight(0xfff0f8, 1.1);
+  scene.add(ambLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffdde8, 1.4);
+  dirLight.position.set(20, 40, 30);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0xf0e0ff, 0.5);
+  fillLight.position.set(-20, 10, -20);
+  scene.add(fillLight);
+
+  // 漂浮小圆点背景
+  addFloatingDots();
+
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('click', onCanvasClick);
+  window.addEventListener('resize', onResize);
+
+  animate();
+}
+
+function addFloatingDots() {
+  // 散落的淡粉色小圆点装饰
+  const geo = new THREE.BufferGeometry();
+  const count = 800;
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pos[i*3]   = (Math.random() - 0.5) * 300;
+    pos[i*3+1] = (Math.random() - 0.5) * 300;
+    pos[i*3+2] = (Math.random() - 0.5) * 300;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xf9c0d8, size: 0.35, transparent: true, opacity: 0.45 });
+  scene.add(new THREE.Points(geo, mat));
+}
+
+// ══════════════════════════════════════════════
+//  构建图谱
+// ══════════════════════════════════════════════
+function buildGraph(papers) {
+  clearGraph();
+  if (!papers.length) return;
+
+  const yearMin = Math.min(...papers.map(p => p.year));
+  const yearMax = Math.max(...papers.map(p => p.year));
+  const yearRange = yearMax - yearMin || 1;
+
+  const positions = computeNodePositions(papers, yearMin, yearRange);
+
+  papers.forEach((paper, i) => {
+    const pos = positions[i];
+    const t = (paper.year - yearMin) / yearRange;
+    const colorIdx = Math.min(Math.floor(t * PAW_COLORS.length), PAW_COLORS.length - 1);
+    const col = PAW_COLORS[colorIdx];
+
+    // 节点大小按引用数（缩小尺寸）
+    const citLog = Math.log10(Math.max(paper.citations, 200));
+    const scale = 0.32 + citLog * 0.10;
+
+    // 创建猫爪
+    const group = createPawGroup(scale, col.main, col.emi);
+    group.position.set(pos.x, pos.y, pos.z);
+    group.rotation.z = (Math.random() - 0.5) * 0.4;  // 略微随机旋转
+    group.userData.paper = paper;
+    group.userData.index = i;
+    group.userData.scale = scale;
+    scene.add(group);
+
+    // 年份标签（CSS2D）
+    const label = createYearLabel(paper);
+    nodeObjects.push({ group, paper, label });
+  });
+
+  // 绘制连线
+  buildEdges(papers, positions);
+
+  // 统计
+  document.getElementById('stat-count').textContent = papers.length;
+  document.getElementById('stat-edges').textContent = edgeObjects.length;
+  document.getElementById('stat-span').textContent = yearMin + '–' + yearMax;
+  document.getElementById('stat-kw').textContent = papers[0]?.keyword || '—';
+
+  buildTimeline(papers, yearMin, yearMax);
+  buildPaperList(papers);
+  focusCameraOnGraph(positions);
+}
+
+function computeNodePositions(papers, yearMin, yearRange) {
+  const positions = papers.map((paper, i) => {
+    const t = (paper.year - yearMin) / yearRange;
+    const angle = t * Math.PI * 4.5 + i * 0.38;
+    const r = 16 + Math.sin(i * 0.6) * 7;
+    return {
+      x: Math.cos(angle) * r + (Math.random() - 0.5) * 4,
+      y: (t - 0.5) * 32 + (Math.random() - 0.5) * 5,
+      z: Math.sin(angle) * r + (Math.random() - 0.5) * 4,
+    };
+  });
+
+  // 简单排斥力防重叠
+  for (let iter = 0; iter < 60; iter++) {
+    for (let i = 0; i < positions.length; i++) {
+      for (let j = i + 1; j < positions.length; j++) {
+        const dx = positions[i].x - positions[j].x;
+        const dy = positions[i].y - positions[j].y;
+        const dz = positions[i].z - positions[j].z;
+        const d = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.001;
+        const min = 4.2;
+        if (d < min) {
+          const f = (min - d) / d * 0.25;
+          positions[i].x += dx * f; positions[j].x -= dx * f;
+          positions[i].y += dy * f * 0.25; positions[j].y -= dy * f * 0.25;
+          positions[i].z += dz * f; positions[j].z -= dz * f;
+        }
+      }
+    }
+  }
+  return positions;
+}
+
+function buildEdges(papers, positions) {
+  for (let i = 0; i < papers.length; i++) {
+    for (let j = i + 1; j < papers.length; j++) {
+      const pi = papers[i], pj = papers[j];
+      const yearDiff = Math.abs(pi.year - pj.year);
+      const sharedTags = pi.tags.filter(t => pj.tags.includes(t)).length;
+      if (yearDiff > 3) continue;
+      if (yearDiff > 1 && sharedTags === 0 && Math.random() > 0.12) continue;
+
+      const startV = new THREE.Vector3(positions[i].x, positions[i].y, positions[i].z);
+      const endV   = new THREE.Vector3(positions[j].x, positions[j].y, positions[j].z);
+      const [from, to] = pi.year <= pj.year ? [startV, endV] : [endV, startV];
+
+      const mid = new THREE.Vector3().lerpVectors(from, to, 0.5);
+      mid.y += 1.5 + Math.random() * 2.5;
+      const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
+      const pts = curve.getPoints(28);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const strength = sharedTags > 0 ? 0.4 : 0.18;
+      const mat = new THREE.LineBasicMaterial({ color: 0xf4a0c8, transparent: true, opacity: strength });
+      const line = new THREE.Line(geo, mat);
+      scene.add(line);
+      edgeObjects.push(line);
+
+      // 箭头
+      const dir = new THREE.Vector3().subVectors(to, from).normalize();
+      const arrow = new THREE.ArrowHelper(
+        dir,
+        new THREE.Vector3().lerpVectors(from, to, 0.68),
+        from.distanceTo(to) * 0.2,
+        0xf472b6, 0.65, 0.3
+      );
+      arrow.line.material.transparent = true;
+      arrow.line.material.opacity = 0.4;
+      scene.add(arrow);
+      edgeObjects.push(arrow);
+    }
+  }
+}
+
+function createYearLabel(paper) {
+  const div = document.createElement('div');
+  div.className = 'node-label';
+  div.innerHTML = `<span class="lbl-year">${paper.year}.${String(paper.month || 1).padStart(2,'0')}</span>`;
+  document.body.appendChild(div);
+  return div;
+}
+
+function clearGraph() {
+  nodeObjects.forEach(({ group, label }) => {
+    scene.remove(group);
+    if (label?.parentNode) label.parentNode.removeChild(label);
+  });
+  edgeObjects.forEach(o => scene.remove(o));
+  nodeObjects = [];
+  edgeObjects = [];
+  selectedNode = null;
+  hoveredNode = null;
+}
+
+// ══════════════════════════════════════════════
+//  时间轴 & 列表
+// ══════════════════════════════════════════════
+function buildTimeline(papers, yearMin, yearMax) {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+
+  const all = document.createElement('span');
+  all.className = 'tl-year active';
+  all.textContent = '全部';
+  all.onclick = () => filterByYear('全部');
+  tl.appendChild(all);
+
+  for (let y = yearMin; y <= yearMax; y++) {
+    if (!papers.some(p => p.year === y)) continue;
+    const s = document.createElement('span');
+    s.className = 'tl-year';
+    s.textContent = y;
+    s.onclick = () => filterByYear(y);
+    tl.appendChild(s);
+  }
+  activeYear = '全部';
+}
+
+function filterByYear(year) {
+  activeYear = year;
+  document.querySelectorAll('.tl-year').forEach(el =>
+    el.classList.toggle('active', String(el.textContent) === String(year)));
+  nodeObjects.forEach(({ group, paper }) => {
+    const vis = year === '全部' || paper.year == year;
+    group.visible = vis;
+    group.traverse(c => { if (c.material) c.material.opacity = vis ? 1 : 0.05; });
+  });
+  edgeObjects.forEach(o => {
+    if (o.material) o.material.opacity = year === '全部' ? undefined : 0.04;
+  });
+}
+
+function buildPaperList(papers) {
+  const container = document.getElementById('paper-items');
+  container.innerHTML = '';
+  document.getElementById('list-header').textContent = `🐾 论文列表 · ${papers.length} 篇`;
+  [...papers].sort((a, b) => a.year - b.year).forEach(paper => {
+    const div = document.createElement('div');
+    div.className = 'paper-item';
+    div.dataset.id = paper.id;
+    div.innerHTML = `<div class="year">${paper.year}.${String(paper.month||1).padStart(2,'0')} · ${paper.venue||''}</div><div class="title">${paper.title}</div>`;
+    div.onclick = () => { focusOnPaper(paper); showDetail(paper); };
+    container.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  相机 & 聚焦
+// ══════════════════════════════════════════════
+function focusCameraOnGraph(positions) {
+  if (!positions.length) return;
+  const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+  const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+  const cz = positions.reduce((s, p) => s + p.z, 0) / positions.length;
+  controls.target.set(cx, cy, cz);
+  camera.position.set(cx, cy + 22, cz + 62);
+  controls.update();
+}
+
+function focusOnPaper(paper) {
+  const obj = nodeObjects.find(n => n.paper.id === paper.id);
+  if (!obj) return;
+  const p = obj.group.position;
+  const dur = 750, start = performance.now();
+  const sp = camera.position.clone(), st = controls.target.clone();
+  const ep = new THREE.Vector3(p.x + 4, p.y + 6, p.z + 16);
+
+  const anim = (now) => {
+    const t = Math.min((now - start) / dur, 1);
+    const e = 1 - Math.pow(1 - t, 3);
+    camera.position.lerpVectors(sp, ep, e);
+    controls.target.lerpVectors(st, p, e);
+    controls.update();
+    if (t < 1) requestAnimationFrame(anim);
+  };
+  requestAnimationFrame(anim);
+
+  // 高亮
+  nodeObjects.forEach(n => {
+    const isSel = n.paper.id === paper.id;
+    n.group.scale.setScalar(isSel ? 2.0 : 0.85);
+  });
+  selectedNode = obj;
+
+  document.querySelectorAll('.paper-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.id === paper.id));
+}
+
+function resetCamera() {
+  if (!nodeObjects.length) return;
+  const positions = nodeObjects.map(n => ({ x: n.group.position.x, y: n.group.position.y, z: n.group.position.z }));
+  focusCameraOnGraph(positions);
+  nodeObjects.forEach(n => n.group.scale.setScalar(1));
+  selectedNode = null;
+  closeDetail();
+}
+
+function toggleAutoRotate() {
+  autoRotate = !autoRotate;
+  document.getElementById('autoRotateBtn').classList.toggle('active', autoRotate);
+}
+
+function zoomIn()  { camera.fov = Math.max(camera.fov - 5, 20); camera.updateProjectionMatrix(); }
+function zoomOut() { camera.fov = Math.min(camera.fov + 5, 100); camera.updateProjectionMatrix(); }
+
+function toggleLayout() {
+  layoutMode = layoutMode === '3d' ? 'flat' : '3d';
+  document.getElementById('layoutBtn').classList.toggle('active', layoutMode === 'flat');
+  if (!nodeObjects.length) return;
+  const yearMin = Math.min(...nodeObjects.map(n => n.paper.year));
+  const yearRange = Math.max(...nodeObjects.map(n => n.paper.year)) - yearMin || 1;
+  nodeObjects.forEach((n, i) => {
+    const t = (n.paper.year - yearMin) / yearRange;
+    const angle = t * Math.PI * 4.5 + i * 0.38;
+    const r = 18 + (i % 4) * 4;
+    if (layoutMode === 'flat') {
+      n.group.position.set(Math.cos(angle) * r, (t - 0.5) * 2, Math.sin(angle) * r);
+    } else {
+      n.group.position.set(Math.cos(angle) * r, (t - 0.5) * 32, Math.sin(angle) * r);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  鼠标交互
+// ══════════════════════════════════════════════
+function onMouseMove(event) {
+  const container = document.getElementById('canvas-container');
+  const rect = container.getBoundingClientRect();
+  mouse.x =  ((event.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouse.y = -((event.clientY - rect.top)  / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  // 拾取所有猫爪子网格
+  const meshes = [];
+  nodeObjects.forEach(n => n.group.traverse(c => { if (c.isMesh) meshes.push(c); }));
+  const hits = raycaster.intersectObjects(meshes);
+
+  if (hits.length > 0) {
+    // 找到对应的 group
+    let hitGroup = hits[0].object;
+    while (hitGroup.parent && !hitGroup.userData.paper) hitGroup = hitGroup.parent;
+    const obj = nodeObjects.find(n => n.group === hitGroup);
+
+    if (obj && obj !== hoveredNode) {
+      if (hoveredNode && hoveredNode !== selectedNode) {
+        hoveredNode.group.scale.setScalar(1);
+      }
+      hoveredNode = obj;
+      if (obj !== selectedNode) obj.group.scale.setScalar(1.45);
+      document.body.style.cursor = 'pointer';
+      showTooltip(event, obj.paper);
+    } else if (hoveredNode) {
+      moveTooltip(event);
+    }
+  } else {
+    if (hoveredNode && hoveredNode !== selectedNode) {
+      hoveredNode.group.scale.setScalar(1);
+    }
+    hoveredNode = null;
+    document.body.style.cursor = 'default';
+    hideTooltip();
+  }
+}
+
+function onCanvasClick() {
+  if (!hoveredNode) return;
+  focusOnPaper(hoveredNode.paper);
+  showDetail(hoveredNode.paper);
+}
+
+function showTooltip(event, paper) {
+  document.getElementById('tt-year').textContent = `🐾 ${paper.year}.${String(paper.month||1).padStart(2,'0')} · ${paper.venue||''}`;
+  document.getElementById('tt-title').textContent = paper.title.length > 55 ? paper.title.substring(0,55)+'…' : paper.title;
+  document.getElementById('tt-focus').textContent = '📌 ' + paper.focus;
+  const tip = document.getElementById('tooltip');
+  tip.classList.add('show');
+  tip.style.left = (event.clientX + 14) + 'px';
+  tip.style.top  = (event.clientY - 10) + 'px';
+}
+function moveTooltip(event) {
+  const tip = document.getElementById('tooltip');
+  tip.style.left = (event.clientX + 14) + 'px';
+  tip.style.top  = (event.clientY - 10) + 'px';
+}
+function hideTooltip() { document.getElementById('tooltip').classList.remove('show'); }
+
+// ══════════════════════════════════════════════
+//  详情面板
+// ══════════════════════════════════════════════
+function showDetail(paper) {
+  document.getElementById('dp-year').textContent = `🐾 ${paper.year}.${String(paper.month||1).padStart(2,'0')} · ${paper.venue||''}`;
+  document.getElementById('dp-title').textContent = paper.title;
+  document.getElementById('dp-authors').textContent = '✍️ ' + paper.authors;
+  document.getElementById('dp-abstract').textContent = paper.abstract;
+  document.getElementById('dp-citations').textContent = `📊 被引用 ${paper.citations.toLocaleString()} 次`;
+  document.getElementById('dp-tags').innerHTML = paper.tags.map(t=>`<span class="dp-tag">${t}</span>`).join('');
+
+  // ── 原文地址（可点击跳转）──
+  const url = paper.paperUrl || `https://scholar.google.com/scholar?q=${encodeURIComponent(paper.title)}`;
+  document.getElementById('dp-url').innerHTML = `<a href="${url}" target="_blank" style="color:#c084fc;text-decoration:none;word-break:break-all;">${url.replace(/https?:\/\//,'')}</a>`;
+
+  // ── 核心论点 ──
+  document.getElementById('dp-core').textContent = paper.coreArgument || '暂无核心论点描述。';
+
+  // ── 领域地位 & 逻辑关系 ──
+  document.getElementById('dp-role').innerHTML = paper.role || '暂无领域地位分析。';
+  // 自动推断逻辑关系
+  const prev = currentPapers.filter(p => p.year < paper.year);
+  const next = currentPapers.filter(p => p.year > paper.year);
+  const sameYear = currentPapers.filter(p => p.year === paper.year && p.id !== paper.id);
+  let logicHTML = '';
+  if (prev.length) {
+    const names = prev.slice(-2).map(p => `<span style="color:#c084fc;cursor:pointer;" onclick="focusOnPaper(window._pm['${p.id}']);showDetail(window._pm['${p.id}'])">${p.year}《${p.title.length>20?p.title.slice(0,20)+'…':p.title}》</span>`).join('、');
+    logicHTML += `📌 前期基础：${names}<br>`;
+  }
+  if (sameYear.length) {
+    const names = sameYear.map(p => `<span style="color:#f48cb8;cursor:pointer;" onclick="focusOnPaper(window._pm['${p.id}']);showDetail(window._pm['${p.id}'])">${p.title.length>18?p.title.slice(0,18)+'…':p.title}</span>`).join('、');
+    logicHTML += `🤝 同期相关：${names}<br>`;
+  }
+  if (next.length) {
+    const names = next.slice(0,2).map(p => `<span style="color:#82c0ff;cursor:pointer;" onclick="focusOnPaper(window._pm['${p.id}']);showDetail(window._pm['${p.id}'])">${p.year}《${p.title.length>20?p.title.slice(0,20)+'…':p.title}》</span>`).join('、');
+    logicHTML += `🚀 后续发展：${names}`;
+  }
+  document.getElementById('dp-logic').innerHTML = logicHTML || '暂无相关逻辑关系信息。';
+
+  // ── 外部链接 ──
+  document.getElementById('dp-links').innerHTML = `
+    <a href="https://scholar.google.com/scholar?q=${encodeURIComponent(paper.title)}" target="_blank">Google Scholar</a>
+    <a href="https://arxiv.org/search/?query=${encodeURIComponent(paper.title)}&searchtype=all" target="_blank">arXiv</a>
+    <a href="https://www.semanticscholar.org/search?q=${encodeURIComponent(paper.title)}&sort=Relevance" target="_blank">Semantic Scholar</a>
+  `;
+
+  // ── 相关文献列表 ──
+  const related = currentPapers.filter(p => p.id !== paper.id && p.tags.some(t => paper.tags.includes(t))).slice(0, 4);
+  document.getElementById('dp-related').innerHTML = related.map(p => `
+    <div style="padding:6px 0;border-bottom:1px solid rgba(249,168,212,0.1);cursor:pointer;"
+      onclick="focusOnPaper(window._pm['${p.id}']);showDetail(window._pm['${p.id}'])">
+      <span style="font-size:11px;color:#c084fc;">${p.year}</span>
+      <span style="font-size:12px;color:#9a6080;margin-left:5px;">${p.title.length>44?p.title.substring(0,44)+'…':p.title}</span>
+    </div>
+  `).join('') || '<span style="font-size:12px;color:#d0b0c0;">暂无直接相关文献</span>';
+
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+  if (selectedNode) { selectedNode.group.scale.setScalar(1); selectedNode = null; }
+  nodeObjects.forEach(n => n.group.scale.setScalar(1));
+}
+
+// ══════════════════════════════════════════════
+//  科研领域关键词映射表（同义词 / 相关词 / 英文别名）
+// ══════════════════════════════════════════════
+const DOMAIN_ALIASES = {
+  "深度学习": [
+    "deep learning","dl","神经网络","neural network","cnn","rnn","lstm","卷积神经网络",
+    "resnet","vgg","alexnet","densenet","vit","vision transformer","swin","图像识别",
+    "计算机视觉","computer vision","图像分类","目标检测","语义分割","diffusion","扩散模型",
+    "生成对抗","gan","vae","自编码器","迁移学习","transfer learning","mamba","sora",
+    "图像生成","stable diffusion","dall-e","midjourney","clip","多模态"
+  ],
+  "大语言模型": [
+    "llm","large language model","语言模型","gpt","bert","transformer","llama","mistral",
+    "mixtral","deepseek","baichuan","通义","文心","qwen","讯飞","kimi","claude","gemini",
+    "chatgpt","copilot","rlhf","instructgpt","对话模型","预训练","fine-tuning","微调",
+    "提示词","prompt","rag","检索增强","思维链","chain of thought","cot","推理模型","moe",
+    "混合专家","代码生成","codex","自然语言处理","nlp","o1","o3","gpt-4","gpt4"
+  ],
+  "量子计算": [
+    "quantum computing","quantum","量子","量子比特","qubit","量子纠缠","量子门","量子电路",
+    "量子优越性","quantum supremacy","量子纠错","quantum error correction","surface code",
+    "表面码","vqe","qaoa","量子化学","量子机器学习","quantum ml","量子模拟","nisq",
+    "超导量子","离子阱","光量子","量子密码","量子通信","量子传感","量子算法"
+  ],
+  "碳中和": [
+    "carbon neutral","carbon neutrality","碳中和","双碳","碳达峰","carbon peak",
+    "气候变化","climate change","温室气体","greenhouse gas","co2","碳排放","carbon emission",
+    "可再生能源","renewable energy","太阳能","solar","风能","wind energy","储能","energy storage",
+    "绿氢","green hydrogen","碳捕集","ccus","carbon capture","碳市场","碳交易","碳税",
+    "cbam","巴黎协定","paris agreement","净零","net zero","碳汇","carbon sink","自然碳汇",
+    "生物能源","beccs","电动汽车","能源转型","energy transition","新能源"
+  ],
+  "CRISPR基因编辑": [
+    "crispr","基因编辑","gene editing","cas9","cas12","cas13","基因治疗","gene therapy",
+    "碱基编辑","base editing","先导编辑","prime editing","基因组编辑","genome editing",
+    "dna修复","基因敲除","knockout","基因敲入","knockin","遗传病","genetic disease",
+    "镰刀型细胞病","beta地中海贫血","农业育种","作物改良","表观基因组","epigenome",
+    "rna编辑","分子诊断","sherlock","detectr","基因组","genome","分子生物学"
+  ],
+  "数学": [
+    "math","mathematics","数学","代数","algebra","几何","geometry","微积分","calculus",
+    "拓扑","topology","数论","number theory","概率","probability","统计","statistics",
+    "优化","optimization","运筹学","operations research","组合数学","combinatorics",
+    "图论","graph theory","随机过程","stochastic process","泛函分析","functional analysis",
+    "统计学习","statistical learning","数值分析","numerical analysis","计算数学"
+  ],
+  "物理学": [
+    "physics","物理","物理学","量子力学","quantum mechanics","相对论","relativity",
+    "引力波","gravitational wave","黑洞","black hole","粒子物理","particle physics",
+    "凝聚态","condensed matter","超导","superconductor","拓扑绝缘体","topological insulator",
+    "光学","optics","声学","acoustics","热力学","thermodynamics","天体物理","astrophysics",
+    "宇宙学","cosmology","高能物理","high energy physics","标准模型","standard model",
+    "激光","laser","纳米物理","nanophysics"
+  ],
+  "材料科学": [
+    "materials science","材料","材料科学","纳米材料","nanomaterials","石墨烯","graphene",
+    "二维材料","2d materials","钙钛矿","perovskite","太阳能电池","solar cell","光伏","photovoltaic",
+    "锂电池","lithium battery","固态电池","solid state battery","储能材料","energy materials",
+    "碳纳米管","carbon nanotube","半导体材料","semiconductor","金属材料","metal alloy",
+    "高分子","polymer","复合材料","composite","生物材料","biomaterials","陶瓷","ceramics",
+    "材料基因组","materials genome","第一性原理","DFT"
+  ],
+  "机器人": [
+    "robot","机器人","robotics","机器人学","自动驾驶","autonomous driving","无人驾驶",
+    "机械臂","robotic arm","软体机器人","soft robot","人形机器人","humanoid robot",
+    "无人机","drone","UAV","强化学习机器人","robot learning","具身智能","embodied AI",
+    "运动规划","motion planning","路径规划","path planning","机器人感知","robot perception",
+    "SLAM","定位与地图","工业机器人","industrial robot","手术机器人","surgical robot",
+    "机器人操作","manipulation","抓取","grasping"
+  ],
+  "通信工程": [
+    "communication","通信","通信工程","5G","6G","无线通信","wireless","信号处理","signal processing",
+    "MIMO","波束赋形","beamforming","毫米波","millimeter wave","OFDM","编码","channel coding",
+    "联邦学习","federated learning","边缘计算","edge computing","物联网","IoT","卫星通信",
+    "satellite communication","LEO","Starlink","RIS","语义通信","semantic communication",
+    "网络切片","network slicing","D2D","V2X","通感一体","ISAC","频谱","spectrum"
+  ],
+  "肿瘤学": [
+    "oncology","肿瘤","肿瘤学","癌症","cancer","免疫治疗","immunotherapy","PD-1","PD-L1",
+    "CTLA-4","免疫检查点","checkpoint","CAR-T","细胞疗法","cell therapy","ADC","抗体",
+    "液体活检","liquid biopsy","ctDNA","基因检测","精准肿瘤","precision oncology",
+    "化疗","chemotherapy","放疗","radiotherapy","靶向治疗","targeted therapy","KRAS",
+    "mRNA疫苗","肿瘤疫苗","新抗原","neoantigen","肿瘤微环境","TME","白血病","lymphoma"
+  ],
+  "公共卫生": [
+    "public health","公共卫生","流行病","epidemiology","疫情","pandemic","传染病","infectious disease",
+    "新冠","covid","COVID-19","疫苗","vaccine","免疫","immunity","卫生政策","health policy",
+    "全球卫生","global health","疾病负担","disease burden","GBD","抗菌素耐药","AMR",
+    "超级细菌","MRSA","寨卡","zika","流感","influenza","健康监测","disease surveillance",
+    "预防医学","preventive medicine","卫生统计","biostatistics"
+  ],
+  "经济学": [
+    "economics","经济学","经济","宏观经济","macroeconomics","微观经济","microeconomics",
+    "计量经济","econometrics","行为经济学","behavioral economics","平台经济","platform economy",
+    "劳动经济","labor economics","发展经济","development economics","金融经济","financial economics",
+    "产业组织","industrial organization","博弈论","game theory","机制设计","mechanism design",
+    "数字经济","digital economy","碳经济","carbon economics","AI经济","数字货币","CBDC",
+    "诺贝尔经济","因果推断","causal inference","双重差分","difference in differences"
+  ],
+  "合成生物学": [
+    "synthetic biology","合成生物学","合成生物","代谢工程","metabolic engineering",
+    "基因回路","gene circuit","基因网络","genetic network","定向进化","directed evolution",
+    "蛋白质设计","protein design","酶工程","enzyme engineering","基因组合成","genome synthesis",
+    "生物制造","biomanufacturing","发酵","fermentation","微生物工厂","microbial cell factory",
+    "无细胞","cell-free","合成基因组","synthetic genome","AlphaFold","蛋白质折叠",
+    "RFdiffusion","从头设计","de novo design","工程菌","活体药物","肠道菌群"
+  ],
+  "脑科学": [
+    "neuroscience","神经科学","脑科学","brain","脑","神经","neuron","神经元",
+    "认知科学","cognitive science","脑机接口","brain-computer interface","BCI",
+    "神经影像","neuroimaging","fMRI","脑电","EEG","连接组","connectome",
+    "光遗传学","optogenetics","深部脑刺激","DBS","帕金森","Parkinson",
+    "阿尔茨海默","Alzheimer","神经退行性","neurodegeneration","抑郁症","depression",
+    "类器官","organoid","脑类器官","记忆","memory","突触","synapse","神经可塑性"
+  ],
+  "环境科学": [
+    "environment","环境","环境科学","生态","ecology","生物多样性","biodiversity",
+    "物种","species","森林","forest","湿地","wetland","海洋","ocean","珊瑚","coral",
+    "污染","pollution","微塑料","microplastic","土壤","soil","大气","atmosphere",
+    "行星边界","planetary boundary","可持续","sustainable","SDG","地球系统","earth system",
+    "遥感","remote sensing","地球观测","earth observation","临界点","tipping point",
+    "气候科学","climate science","深海","deep sea","冰川","glacier"
+  ],
+  "农业科学": [
+    "agriculture","农业","农学","agricultural","粮食","food","作物","crop","育种","breeding",
+    "水稻","rice","小麦","wheat","玉米","maize","蔬菜","vegetable","水果","fruit",
+    "土壤","soil","灌溉","irrigation","农药","pesticide","化肥","fertilizer",
+    "精准农业","precision agriculture","智慧农业","smart farming","无人机农业","drone farming",
+    "垂直农业","vertical farming","植物工厂","plant factory","粮食安全","food security",
+    "可持续农业","sustainable agriculture","有机农业","organic farming","微生物肥","biofertilizer"
+  ],
+  "生物信息学": [
+    "bioinformatics","生物信息","生物信息学","基因组学","genomics","转录组","transcriptomics",
+    "蛋白质组","proteomics","代谢组","metabolomics","单细胞","single cell","scRNA",
+    "空间转录组","spatial transcriptomics","多组学","multi-omics","系统生物学","systems biology",
+    "测序","sequencing","NGS","第三代测序","long read","三代测序","PacBio","nanopore",
+    "GATK","变异","variant","SNP","基因组组装","genome assembly","T2T",
+    "蛋白质结构","protein structure","AlphaFold","ESM","蛋白质语言模型","基因调控"
+  ],
+};
+
+// 非科研常见词库（如输入这类词则提示无结果）
+const NON_ACADEMIC_PATTERNS = [
+  // 娱乐/社交/生活类
+  /^(游戏|电影|音乐|明星|追剧|打游戏|美食|旅游|购物|时尚|穿搭|化妆|美妆|护肤|健身|减肥|瘦身|萌宠|宠物|猫咪|狗狗|萌猫|萌狗)/,
+  /^(抖音|微博|微信|淘宝|京东|拼多多|快手|小红书|B站|bilibili|youtube|instagram|twitter|tiktok)/,
+  /^(今天吃什么|推荐餐厅|奶茶|咖啡|外卖|菜谱|做饭)/,
+  /^(你好|hi|hello|你是谁|帮我|测试|test|aaa|bbb|ccc|xxx|zzz|123|456)/,
+  // 金融/财经类（非科研）
+  /^(股票|炒股|基金|理财|投资|K线|涨停|跌停|行情|个股|ETF|大盘|指数|A股|港股|美股|沪深|创业板|科创板)/,
+  // 政治/历史/文化（非科研领域）
+  /^(历史|政治|法律|新闻|资讯|事件|热点)/,
+  // 明显无意义或极短词
+  /^.{1}$/,
+];
+
+/**
+ * 检测关键词是否属于已定义的科研领域
+ * 返回匹配的数据库key，或null
+ */
+function matchDomain(kw) {
+  const lower = kw.toLowerCase().replace(/\s+/g,'');
+  // 直接匹配数据库key
+  if (PAPER_DB[kw]) return kw;
+  // 别名匹配
+  for (const [domain, aliases] of Object.entries(DOMAIN_ALIASES)) {
+    if (aliases.some(alias => lower.includes(alias.replace(/\s+/g,'')) || alias.replace(/\s+/g,'').includes(lower))) {
+      return domain;
+    }
+  }
+  // 数据库key子串匹配
+  for (const key of Object.keys(PAPER_DB)) {
+    if (key.includes(kw) || kw.includes(key)) return key;
+  }
+  return null;
+}
+
+/**
+ * 是否明确是非科研词汇
+ */
+function isNonAcademic(kw) {
+  return NON_ACADEMIC_PATTERNS.some(re => re.test(kw.trim()));
+}
+
+// ── 无结果弹窗（猫抓提示）──
+function showNoResultToast(keyword) {
+  // 防止重复
+  const old = document.getElementById('no-result-toast');
+  if (old) old.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'no-result-toast';
+  toast.style.cssText = `
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(255,248,245,0.98); backdrop-filter:blur(18px);
+    border:2px solid rgba(249,168,212,0.55); border-radius:22px;
+    padding:36px 44px; text-align:center; z-index:300;
+    box-shadow:0 12px 48px rgba(249,168,212,0.35);
+    animation: toastIn 0.35s cubic-bezier(.4,0,.2,1);
+    min-width:320px;
+  `;
+  toast.innerHTML = `
+    <style>
+      @keyframes toastIn { from{opacity:0;transform:translate(-50%,-46%) scale(0.88)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+      @keyframes pawShake { 0%,100%{transform:rotate(0deg)} 20%{transform:rotate(-18deg)} 50%{transform:rotate(14deg)} 75%{transform:rotate(-10deg)} }
+    </style>
+    <div style="font-size:58px;animation:pawShake 1.2s ease-in-out infinite;display:inline-block;margin-bottom:12px;">🐾</div>
+    <div style="font-size:18px;font-weight:800;color:#c060a0;margin-bottom:8px;">抱歉，无相关内容</div>
+    <div style="font-size:13.5px;color:#a07090;line-height:1.7;max-width:260px;margin:0 auto;">
+      「<span style="color:#e060a0;font-weight:600;">${keyword}</span>」暂不在科研图谱覆盖范围内<br>
+      请尝试以下方向：
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:14px 0 0;">
+      ${Object.keys(PAPER_DB).map(k=>`<span onclick="document.getElementById('no-result-toast').remove();quickSearch('${k}')" style="background:rgba(249,168,212,0.18);border:1px solid rgba(249,168,212,0.5);border-radius:14px;font-size:12px;padding:5px 14px;cursor:pointer;color:#c060a0;transition:background 0.2s;" onmouseover="this.style.background='rgba(249,168,212,0.35)'" onmouseout="this.style.background='rgba(249,168,212,0.18)'">${k}</span>`).join('')}
+    </div>
+    <button onclick="this.parentElement.remove()" style="margin-top:18px;background:linear-gradient(135deg,#f9a8d4,#c084fc);border:none;border-radius:16px;color:#fff;font-size:13px;padding:8px 26px;cursor:pointer;font-weight:600;letter-spacing:0.5px;">知道啦 🐾</button>
+  `;
+  document.body.appendChild(toast);
+
+  // 5秒后自动消失
+  setTimeout(() => { if (toast.parentNode) toast.style.opacity = '0'; setTimeout(()=>toast.remove(), 400); }, 5000);
+}
+
+// ══════════════════════════════════════════════
+//  搜索
+// ══════════════════════════════════════════════
+function doSearch(keyword) {
+  if (!keyword.trim()) return;
+  currentKeyword = keyword.trim();
+
+  // 1. 先检测是否明显是非科研词汇
+  if (isNonAcademic(currentKeyword)) {
+    showNoResultToast(currentKeyword);
+    return;
+  }
+
+  // 2. 尝试科研领域匹配
+  const domainKey = matchDomain(currentKeyword);
+
+  if (domainKey) {
+    // 匹配到科研领域，加载对应数据
+    const papers = PAPER_DB[domainKey].map(p => ({...p, keyword: currentKeyword}));
+    currentPapers = papers;
+    window._pm = {};
+    papers.forEach(p => window._pm[p.id] = p);
+    showLoading(`🐾 正在构建「${domainKey}」科研图谱~`);
+    setTimeout(() => { buildGraph(papers); hideLoading(); if (!listOpen) toggleList(); }, 900);
+  } else {
+    // 未匹配到任何科研领域 → 显示无结果提示
+    showNoResultToast(currentKeyword);
+  }
+}
+
+function genRandom(keyword) {
+  const focuses = ['基础理论构建','方法论创新','性能突破','跨领域应用','综述与展望','临床验证','工程落地','标准与评测'];
+  const venues  = ['Nature','Science','CVPR','NeurIPS','ICML','ACL','AAAI','arXiv'];
+  const papers  = [];
+  for (let y = 2016; y <= 2025; y++) {
+    const n = y >= 2020 ? 3 : 2;
+    for (let j = 0; j < n; j++) {
+      const m = 1 + Math.floor(Math.random() * 12);
+      papers.push({
+        id: `${keyword}_r_${y}_${j}`, keyword, year: y, month: m,
+        title: `${keyword}: ${focuses[(y+j)%focuses.length]} (${y})`,
+        authors: 'Author A, Author B et al.',
+        focus: focuses[(y+j)%focuses.length],
+        citations: Math.floor(Math.random() * 10000) + 300,
+        abstract: `本文针对${keyword}领域进行深入研究，提出了创新性方法，在${y}年取得重要进展。`,
+        coreArgument: `本文在${keyword}领域提出了${focuses[(y+j)%focuses.length]}方向的核心贡献，通过系统性实验验证了方法的有效性。`,
+        role: `本文是${keyword}领域${y}年的代表性工作之一，对该领域的${focuses[(y+j)%focuses.length]}方向产生了重要推动作用。`,
+        paperUrl: `https://scholar.google.com/scholar?q=${encodeURIComponent(keyword+' '+y)}`,
+        tags: [keyword, focuses[j%focuses.length]],
+        venue: `${venues[(y+j)%venues.length]} ${y}`,
+      });
+    }
+  }
+  return papers;
+}
+
+function quickSearch(kw) {
+  document.getElementById('searchInput').value = kw;
+  doSearch(kw);
+}
+
+function showLoading(text) {
+  const el = document.getElementById('loading');
+  el.querySelector('.loading-text').textContent = text || '加载中...';
+  el.classList.remove('hidden');
+}
+function hideLoading() {
+  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 200);
+}
+
+function toggleList() {
+  listOpen = !listOpen;
+  document.getElementById('paper-list').classList.toggle('open', listOpen);
+  const btn = document.getElementById('toggle-list');
+  btn.classList.toggle('closed', !listOpen);
+  btn.style.left = listOpen ? '300px' : '10px';
+}
+
+// ══════════════════════════════════════════════
+//  动画循环
+// ══════════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+
+  controls.autoRotate = autoRotate;
+  controls.autoRotateSpeed = 0.45;
+  controls.update();
+
+  const t = Date.now() * 0.001;
+
+  // 猫爪轻微浮动 & 摇摆
+  nodeObjects.forEach((n, i) => {
+    if (n.group === selectedNode?.group) return;
+    const scale = n.paper && n.group.userData.scale ? n.group.userData.scale : 0.8;
+    const hovering = n === hoveredNode;
+    if (!hovering) {
+      n.group.position.y += Math.sin(t * 1.1 + i * 0.7) * 0.003;  // 轻微上下浮动
+      n.group.rotation.z  = Math.sin(t * 0.6 + i * 0.4) * 0.08;   // 轻微摇摆
+    }
+  });
+
+  // 标签跟随
+  nodeObjects.forEach(n => {
+    if (!n.label) return;
+    const pos = n.group.position.clone().project(camera);
+    const container = document.getElementById('canvas-container').getBoundingClientRect();
+    const sx = container.left + (pos.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+    const sy = container.top  + (1 - (pos.y * 0.5 + 0.5)) * renderer.domElement.clientHeight;
+    const distFactor = camera.position.distanceTo(n.group.position);
+    const offsetY = Math.max(12, 70 / distFactor * 22);
+    n.label.style.left = (sx - 28) + 'px';
+    n.label.style.top  = (sy + offsetY) + 'px';
+    n.label.style.opacity = pos.z < 1 ? '1' : '0';
+
+    const isSel = selectedNode && selectedNode.group === n.group;
+    const isHov = n === hoveredNode;
+    n.label.querySelector('.lbl-year').style.background = (isSel || isHov)
+      ? 'rgba(249,168,212,0.5)' : 'rgba(255,240,248,0.92)';
+    n.label.querySelector('.lbl-year').style.color = (isSel || isHov) ? '#8020a0' : '#c060a0';
+  });
+
+  renderer.render(scene, camera);
+}
+
+function onResize() {
+  const c = document.getElementById('canvas-container');
+  camera.aspect = c.clientWidth / c.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(c.clientWidth, c.clientHeight);
+}
+
+// ══════════════════════════════════════════════
+//  启动
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initThree();
+  document.getElementById('searchBtn').onclick = () => doSearch(document.getElementById('searchInput').value);
+  document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(e.target.value); });
+  setTimeout(() => { hideLoading(); quickSearch('深度学习'); }, 700);
+});
+</script>
+</body>
+</html>

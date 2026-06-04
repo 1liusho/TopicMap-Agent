@@ -73,6 +73,9 @@ export function RunJourney({ project }: { project: Project }) {
 
   const resultCount = Number(run?.stats.paperCount ?? 0);
   const ready = run?.status === "completed";
+  const researchGraphHref = project.topic.trim()
+    ? `/research-graph?topic=${encodeURIComponent(project.topic.trim())}`
+    : "/research-graph";
 
   return (
     <div className="min-h-screen">
@@ -188,9 +191,9 @@ export function RunJourney({ project }: { project: Project }) {
                 description="按相关度查看论文池，支持保留、剔除、排序和快速筛选。"
               />
               <ActionCard
-                href={`/projects/${project.id}/graph`}
+                href={researchGraphHref}
                 accent="teal"
-                title="知识图谱"
+                title="View Map"
                 description="围绕方法、指标、问题与论文关系查看当前研究脉络。"
               />
               <ActionCard
