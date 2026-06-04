@@ -14,13 +14,17 @@ export function ReportView({
   project: Project;
   report: ReportPayload;
 }) {
+  const researchGraphHref = project.topic.trim()
+    ? `/research-graph?topic=${encodeURIComponent(project.topic.trim())}`
+    : "/research-graph";
+
   return (
     <div className="min-h-screen">
       <SiteHeader
         active="report"
         initialQuery={project.topic}
         projectId={project.id}
-        backHref={`/projects/${project.id}/graph`}
+        backHref={researchGraphHref}
         backLabel="返回图谱页"
       />
 

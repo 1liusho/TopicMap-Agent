@@ -26,6 +26,9 @@ export function SiteHeader({
   const [loading, setLoading] = useState(false);
 
   const canSubmit = useMemo(() => query.trim().length >= 2, [query]);
+  const researchGraphHref = initialQuery.trim()
+    ? `/research-graph?topic=${encodeURIComponent(initialQuery.trim())}`
+    : "/research-graph";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,14 +115,14 @@ export function SiteHeader({
             文献目录
           </Link>
           <Link
-            href={projectId ? `/projects/${projectId}/graph` : "/projects/new"}
+            href={researchGraphHref}
             className={`rounded-[8px] px-4 py-1.5 text-[13px] font-medium transition ${
               active === "graph"
                 ? "bg-white text-[var(--teal)] shadow-sm"
                 : "text-[var(--text2)] hover:text-[var(--text)]"
             }`}
           >
-            知识图谱
+            View Map
           </Link>
           <Link
             href={projectId ? `/projects/${projectId}/report` : "/projects/new"}

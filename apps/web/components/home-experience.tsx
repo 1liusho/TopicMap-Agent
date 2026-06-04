@@ -38,6 +38,9 @@ export function HomeExperience({ projects }: { projects: Project[] }) {
   }, []);
 
   const canSubmit = useMemo(() => query.trim().length >= 2, [query]);
+  const researchGraphHref = query.trim()
+    ? `/research-graph?topic=${encodeURIComponent(query.trim())}`
+    : "/research-graph";
 
   function persistHistory(nextQuery: string) {
     const normalized = nextQuery.trim();
@@ -186,6 +189,12 @@ export function HomeExperience({ projects }: { projects: Project[] }) {
           <p className="mt-3 pl-5 text-xs text-[var(--text3)]">
             输入主题后会自动创建项目、生成检索计划，并进入研究流程页。
           </p>
+          <Link
+            href={researchGraphHref}
+            className="mt-4 inline-flex rounded-[10px] border border-[var(--border)] bg-white px-4 py-2 text-[13px] font-medium text-[var(--text2)] transition hover:border-[var(--teal)] hover:bg-[rgba(16,185,129,0.08)] hover:text-[var(--teal)]"
+          >
+            View Map
+          </Link>
 
           <div className="mt-6 flex flex-wrap items-center gap-2">
             <span className="mr-1 text-xs text-[var(--text3)]">热门主题</span>
